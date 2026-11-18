@@ -38,18 +38,28 @@ export async function readContent(t: string): Promise<{ content: SiteContent; sh
   return { content: normalize(JSON.parse(b64ToText(j.content))), sha: j.sha as string }
 }
 
-async function put(t: string, path: string, b64: string, message: string, sha?: string) {
-  const r = await call(t, `/repos/${REPO}/contents/${path}`, {
-    method: 'PUT',
-    body: JSON.stringify({ message, content: b64, branch: BRANCH, ...(sha ? { sha } : {}) }),
-  })
-  if (!r.ok) throw new Error(`put ${r.status}`)
-}
-
-export async function publishAll(t: string, files: Record<string, { b64: string }>, content: SiteContent) {
-  for (const [p, f] of Object.entries(files)) await put(t, `public/${p}`, f.b64, 'Файл қосылды')
-  const { sha } = await readContent(t)
-  await put(t, 'public/content.json', textToB64(JSON.stringify(content, null, 2)), 'Сайт мазмұны жаңартылды', sha)
+export class ConflictError extends Error {}
+async function json(t:string,path:string,method='GET',body?:unknown){const r=await call(t,path,{method,...(body===undefined?{}:{body:JSON.stringify(body)})});if(!r.ok)throw new Error(`GitHub ${r.status}`);return r.json()}
+export interface HistoryItem { sha:string; date:string; message:string }
+export async function readHistory(t:string):Promise<HistoryItem[]>{const items=await json(t,`/repos/${REPO}/commits?sha=${BRANCH}&path=public/content.json&per_page=20`);return items.map((i:any)=>({sha:i.sha,date:i.commit.committer.date,message:i.commit.message}))}
+export async function readVersion(t:string,sha:string):Promise<SiteContent>{const j=await json(t,`/repos/${REPO}/contents/public/content.json?ref=${encodeURIComponent(sha)}`);return normalize(JSON.parse(b64ToText(j.content)))}
+export async function publishAll(t: string, files: Record<string, { b64: string }>, content: SiteContent, expected?:string) {
+  const ref=await json(t,`/repos/${REPO}/git/ref/heads/${BRANCH}`)
+  const head=ref.object.sha
+  const current=await readVersion(t,head)
+  if(expected!==undefined && JSON.stringify(current)!==expected)throw new ConflictError()
+  const commit=await json(t,`/repos/${REPO}/git/commits/${head}`)
+  const tree=[] as {path:string;mode:string;type:string;sha:string}[]
+  for(const [path,f] of Object.entries({...files,'content.json':{b64:textToB64(JSON.stringify(content,null,2))}})){
+    if(path!=='content.json' && (!/^uploads\/[a-zA-Z0-9._/-]+$/.test(path)||path.includes('..')))throw new Error('Invalid path')
+    const blob=await json(t,`/repos/${REPO}/git/blobs`,'POST',{content:f.b64,encoding:'base64'})
+    tree.push({path:`public/${path}`,mode:'100644',type:'blob',sha:blob.sha})
+  }
+  const nextTree=await json(t,`/repos/${REPO}/git/trees`,'POST',{base_tree:commit.tree.sha,tree})
+  const next=await json(t,`/repos/${REPO}/git/commits`,'POST',{message:'Сайт мазмұны жаңартылды',tree:nextTree.sha,parents:[head]})
+  const r=await call(t,`/repos/${REPO}/git/refs/heads/${BRANCH}`,{method:'PATCH',body:JSON.stringify({sha:next.sha,force:false})})
+  if(r.status===409||r.status===422)throw new ConflictError()
+  if(!r.ok)throw new Error(`publish ${r.status}`)
 }
 
 export async function imageToB64(file: File, max = 1600) {

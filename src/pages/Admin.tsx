@@ -1,8 +1,10 @@
+import { loadDraft, saveDraft, clearDraft, downloadBackup, type Draft } from '../admin-drafts'
+import { ConflictError, readHistory, readVersion, type HistoryItem } from '../github'
 import BuilderEditor from '../components/BuilderEditor'
 import { blankBuilder } from '../builder'
 import SettingsEditor from '../components/SettingsEditor'
 import { directions } from '../site-settings'
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useState, useRef, type ReactNode } from 'react'
 import { Upload, Trash2, LogOut, Send, Plus, Lock, AlertTriangle } from 'lucide-react'
 import { DIRECTIONS } from '../data'
 import { SITE_URL } from '../config'
@@ -10,7 +12,7 @@ import { AuthError, checkAccess, readContent, publishAll, imageToB64, fileToB64,
 import type { SiteContent, StepData } from '../content-store'
 
 type Pending = Record<string, { b64: string; preview: string }>
-type Tab = 'home' | 'steps' | 'ach' | 'settings' | 'builder'
+type Tab = 'dashboard' | 'home' | 'steps' | 'ach' | 'settings' | 'builder'
 type MediaKind = 'photos' | 'evidence'
 
 const KEY = 'birlik_admin_token'
@@ -53,9 +55,15 @@ export default function Admin() {
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null)
   const [content, setContent] = useState<SiteContent>({ site: {}, steps: {}, achievements: [] })
+  const currentContent = useRef(content); currentContent.current = content
   const [snap, setSnap] = useState('')
   const [pending, setPending] = useState<Pending>({})
-  const [tab, setTab] = useState<Tab>('home')
+  const [tab, setTab] = useState<Tab>('dashboard')
+  const [undo, setUndo] = useState<SiteContent[]>([])
+  const [redo, setRedo] = useState<SiteContent[]>([])
+  const [history, setHistory] = useState<HistoryItem[]>([])
+  const [draftStatus, setDraftStatus] = useState('')
+  const [savedDraft, setSavedDraft] = useState<Draft | undefined>()
   const [step, setStep] = useState(DIRECTIONS[0].slug)
   const [vUrl, setVUrl] = useState('')
   const [vCap, setVCap] = useState('')
@@ -75,6 +83,7 @@ export default function Admin() {
         if (!window.confirm('Сайт мазмұны өзгерген. Жарияланбаған өзгерістерді өшіріп, жаңа нұсқаны ашасыз ба?')) return
         setContent(c); setSnap(remote); setPending({})
       } else if (!snap || !dirty) { setContent(c); setSnap(remote); setPending({}) }
+      try { const d = await loadDraft(); setSavedDraft(d); if (d && d.base === remote && (!snap || !dirty) && window.confirm('Сақталған нобайды қалпына келтіресіз бе?')) { setContent(d.content); setPending(d.pending); setSnap(remote) } } catch { setDraftStatus('Нобайды оқу мүмкін болмады') }
       setInput(''); setToken(t); setExpiresAt(Date.now() + SESSION_MS); setReady(true)
     } catch (e) { fail(e); setToken(''); setInput(''); setReady(false) } finally { setBusy(false) }
   }
@@ -92,7 +101,19 @@ export default function Admin() {
   }, [ready, expiresAt, busy])
 
   const dirty = JSON.stringify(content) !== snap || Object.keys(pending).length > 0
-  const upd = (fn: (c: SiteContent) => void) => setContent(prev => { const n = structuredClone(prev); fn(n); return n })
+  useEffect(() => {
+    if (!ready || !dirty || busy) return
+    const timer=window.setTimeout(()=>{const d={content,pending,base:snap,savedAt:Date.now()}; void saveDraft(d).then(()=>{setSavedDraft(d);setDraftStatus('Нобай сақталды: '+new Date(d.savedAt).toLocaleTimeString())}).catch(()=>setDraftStatus('Нобай сақталмады — резервтік көшірме жүктеңіз'))},800)
+    return ()=>window.clearTimeout(timer)
+  },[ready,dirty,busy,content,pending,snap])
+  useEffect(()=>{if(!ready||!dirty)return; const warn=(e:BeforeUnloadEvent)=>{e.preventDefault();e.returnValue=''};window.addEventListener('beforeunload',warn);return()=>window.removeEventListener('beforeunload',warn)},[ready,dirty])
+  const upd = (fn: (c: SiteContent) => void) => {const prevContent=currentContent.current;const n=structuredClone(prevContent);fn(n);currentContent.current=n;setUndo(prev=>[...prev.slice(-29),prevContent]);setRedo([]);setContent(n)}
+  const restore = (c:SiteContent) => {setUndo(prev=>[...prev.slice(-29),content]);setRedo([]);setContent(c)}
+  const undoOne=()=>{const last=undo[undo.length-1];if(!last)return;setRedo(r=>[...r,content]);setUndo(u=>u.slice(0,-1));setContent(last)}
+  const redoOne=()=>{const last=redo[redo.length-1];if(!last)return;setUndo(u=>[...u,content]);setRedo(r=>r.slice(0,-1));setContent(last)}
+  async function refreshHistory(){setBusy(true);try{setHistory(await readHistory(token))}catch(e){fail(e)}finally{setBusy(false)}}
+  async function restoreVersion(sha:string){if(!window.confirm('Бұл нұсқа нобайға жүктеледі. Жалғастыру керек пе?'))return;setBusy(true);try{restore(await readVersion(token,sha))}catch(e){fail(e)}finally{setBusy(false)}}
+
   const sd = (c: SiteContent): StepData => (c.steps[step] ??= {})
   const show = (s?: string) => (s ? pending[s]?.preview ?? s : '')
 
@@ -122,16 +143,18 @@ export default function Admin() {
     try {
       const used = JSON.stringify(content)
       const files = Object.fromEntries(Object.entries(pending).filter(([p]) => used.includes(p)))
-      await publishAll(token, files, content)
-      setPending({}); setSnap(JSON.stringify(content))
-      setMsg({ ok: true, text: 'Жарияланды! Сайт 1–2 минуттан кейін жаңарады.' })
+      await publishAll(token, files, content, snap)
+      setPending({}); setSnap(JSON.stringify(content)); setUndo([]); setRedo([]); setSavedDraft(undefined); setDraftStatus(''); try { await clearDraft() } catch { setDraftStatus('Ескі нобайды жою мүмкін болмады') }
+      setMsg({ ok: true, text: 'GitHub-та сақталды! Сайт GitHub Actions сәтті аяқталған соң жаңарады.' })
     } catch (e) {
       if (e instanceof AuthError) lock('Код жарамсыз немесе жазуға рұқсат жоқ. Кодты қайта енгізіңіз.')
+      else if (e instanceof ConflictError) err('Сайттың жаңа нұсқасы бар. Резервтік көшірме жүктеп, қайта кіріңіз.')
       else fail(e)
     } finally { setBusy(false) }
   }
-  const logout = () => {
-    if (dirty && !window.confirm('Жарияланбаған өзгерістер жоғалады. Шығасыз ба?')) return
+  const logout = async () => {
+    if (dirty) { if (!window.confirm('Нобайды сақтап, шығасыз ба?')) return; try { await saveDraft({content,pending,base:snap,savedAt:Date.now()}) } catch { err('Нобай сақталмады. Резервтік көшірме жүктеңіз.'); return } }
+    setUndo([]); setRedo([]); setHistory([]); setSavedDraft(undefined)
     clearLegacyToken(); setToken(''); setReady(false); setInput(''); setPending({}); setExpiresAt(0); setSnap(''); setContent({ site: {}, steps: {}, achievements: [] }); setMsg(null)
   }
 
@@ -172,7 +195,7 @@ export default function Admin() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6 px-4 py-10">
+    <div className="mx-auto max-w-5xl space-y-6 px-4 py-10">
       <div className="sticky top-16 z-30 -mx-2 flex flex-wrap items-center gap-3 rounded-2xl border border-sky-line bg-white/95 p-3 shadow-card backdrop-blur">
         <button disabled={busy || !dirty} onClick={publish} className={`${btn} bg-gold text-navy-950 disabled:opacity-50`}><Send className="h-4 w-4" aria-hidden="true" />{busy ? 'Жарияланып жатыр…' : 'Жариялау'}</button>
         <span className="text-sm text-navy-800">{dirty ? 'Жарияланбаған өзгерістер бар' : 'Өзгерістер жоқ'}</span>
@@ -183,11 +206,37 @@ export default function Admin() {
       <p className="flex gap-2 rounded-xl bg-amber-50 p-3 text-sm text-amber-900"><AlertTriangle className="h-5 w-5 shrink-0" aria-hidden="true" />Сайт барлығына ашық. Балалардың фотосы мен аты-жөнін тек ата-аналардың келісімімен жариялаңыз.</p>
 
       <div role="tablist" className="flex flex-wrap gap-2">
-        {([['builder','Бет конструкторы'], ['settings','Сайт баптаулары'], ['home', 'Басты бет'], ['steps', 'Алты қадам'], ['ach', 'Жетістіктер']] as [Tab, string][]).map(([id, l]) => (
+        {([['dashboard','Басқару тақтасы'], ['builder','Бет конструкторы'], ['settings','Сайт баптаулары'], ['home', 'Басты бет'], ['steps', 'Алты қадам'], ['ach', 'Жетістіктер']] as [Tab, string][]).map(([id, l]) => (
           <button key={id} role="tab" aria-selected={tab === id} onClick={() => setTab(id)} className={`${btn} ${tab === id ? 'bg-navy-900 text-white' : 'bg-white shadow-card'}`}>{l}</button>
         ))}
       </div>
 
+      <div className="flex flex-wrap items-center gap-2 text-sm">
+        <button className={`${btn} bg-sky-soft disabled:opacity-40`} disabled={busy||!undo.length} onClick={undoOne}>↶ Болдырмау</button>
+        <button className={`${btn} bg-sky-soft disabled:opacity-40`} disabled={busy||!redo.length} onClick={redoOne}>↷ Қайталау</button>
+        <button className={`${btn} bg-sky-soft`} disabled={busy} onClick={()=>downloadBackup(content,pending)}>Көшірмені жүктеу</button>
+        <span role="status">{draftStatus}</span>
+      </div>
+      <fieldset disabled={busy} className="min-w-0 space-y-6 disabled:opacity-70">
+      {tab === 'dashboard' && <>
+        <Card title="Сайт статистикасы">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {[["Беттер",7+(content.builder?.pages.length??0)],["Фотолар",Object.values(content.steps).reduce((n,s)=>n+(s.photos?.length??0)+(s.evidence?.length??0),0)],["Құжаттар",Object.values(content.steps).reduce((n,s)=>n+(s.resources?.length??0),0)],["Жетістіктер",content.achievements.length]].map(([label,n])=><div key={label} className="rounded-2xl bg-sky-soft p-4"><p className="text-2xl font-bold">{n}</p><p className="text-sm">{label}</p></div>)}
+          </div><p className="text-xs">Негізгі бөлімдердегі материалдар саны. Кірушілер статистикасы емес.</p>
+          {directions(content.settings).map(d=>{const s=content.steps[d.slug];return <button key={d.slug} disabled={busy} onClick={()=>{setStep(d.slug);setTab('steps')}} className="flex w-full justify-between rounded-xl border border-sky-line p-3 text-left"><span>{d.title}</span><span>{(s?.photos?.length??0)+(s?.videos?.length??0)+(s?.resources?.length??0)+(s?.evidence?.length??0)} материал</span></button>})}
+        </Card>
+        <Card title="Нобайлар және резервтік көшірме">
+          <p className="text-sm">Нобай осы браузерде сақталады. Токен сақталмайды. Резервтік көшірмеде жарияланған файлдардың сілтемелері ғана болады.</p>
+          <button disabled={busy} className={`${btn} bg-sky-soft`} onClick={async()=>{try{const d={content,pending,base:snap,savedAt:Date.now()};await saveDraft(d);setSavedDraft(d);setDraftStatus('Нобай сақталды')}catch{err('Нобай сақталмады')}}}>Нобайды сақтау</button>
+          {savedDraft&&<button disabled={busy} className={`${btn} bg-sky-soft`} onClick={()=>{if(window.confirm(savedDraft.base!==snap?'Нобай ескі нұсқадан. Қазіргі мазмұнды ауыстырасыз ба?':'Нобайды қалпына келтіресіз бе?')){restore(savedDraft.content);setPending(p=>({...p,...savedDraft.pending}))}}}>Нобайды қалпына келтіру</button>}
+          {savedDraft&&<button disabled={busy} className={`${btn} text-red-700`} onClick={async()=>{if(!window.confirm('Сақталған нобайды өшіру керек пе?'))return;try{await clearDraft();setSavedDraft(undefined);setDraftStatus('Нобай өшірілді (өзгерістер болса, қайта сақталуы мүмкін)')}catch{err('Нобайды өшіру мүмкін болмады')}}}>Нобайды өшіру</button>}
+        </Card>
+        <Card title="Жариялау тарихы">
+          <button disabled={busy} className={`${btn} bg-sky-soft`} onClick={refreshHistory}>Тарихты жүктеу / жаңарту</button>
+          {history.map(h=><div key={h.sha} className="flex flex-wrap items-center gap-3 rounded-xl border border-sky-line p-3"><div className="flex-1"><p className="font-medium">{h.message}</p><p className="text-xs">{new Date(h.date).toLocaleString()} · {h.sha.slice(0,7)}</p></div><button disabled={busy} className={`${btn} bg-sky-soft`} onClick={()=>restoreVersion(h.sha)}>Нұсқаны ашу</button></div>)}
+          <p className="text-xs">Қалпына келтіру тек нобайға әсер етеді. Сайтты жаңарту үшін «Жариялау» басыңыз.</p>
+        </Card>
+      </>}
       {tab === 'builder' && <Card title="Бет конструкторы"><BuilderEditor value={content.builder} settings={content.settings} busy={busy} onChange={fn=>upd(c=>fn(c.builder??=blankBuilder()))} show={show} upload={async(f,k)=>{setBusy(true);try{return k==='image'?(await addImages([f]))[0]||null:await addDoc(f)}catch{err('Файлды оқу мүмкін болмады.');return null}finally{setBusy(false)}}}/></Card>}
       {tab === 'settings' && <Card title="Сайт баптаулары"><ImageField label="Сайт логотипі" src={show(content.site.logoPhoto)} onPick={pickSite('logoPhoto')} /><button className={btn} onClick={()=>setSite('logoPhoto','')}>Логотипті алып тастау</button><SettingsEditor value={content.settings} onChange={v=>upd(c=>{c.settings=v})}/></Card>}
       {tab === 'home' && (
@@ -265,6 +314,7 @@ export default function Admin() {
           <button className={`${btn} bg-sky-soft`} onClick={() => upd(c => { c.achievements.push({ title: '' }) })}><Plus className="h-4 w-4" aria-hidden="true" />Жаңа карточка қосу</button>
         </Card>
       )}
+      </fieldset>
     </div>
   )
 }
