@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html { scroll-behavior: smooth; }
+body { @apply bg-sky-soft font-sans text-navy-900 antialiased; }
+:focus-visible { @apply outline-none ring-2 ring-gold ring-offset-2 ring-offset-white; }
+
+/* Қазақ оюы (қошқар мүйіз) — жеңілдетілген қайталанатын өрнек */
+.ornament {
+  height: 18px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='36' height='18' viewBox='0 0 36 18'%3E%3Cpath d='M18 9c-4-6-10-6-10-1s6 5 6 1M18 9c4-6 10-6 10-1s-6 5-6 1' fill='none' stroke='%23C9A24B' stroke-width='1.4' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: repeat-x; background-position: center; opacity: .85;
+}
+@keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+.rise { animation: rise .7s ease both; }
+@media (prefers-reduced-motion: reduce) { .rise { animation: none; } html { scroll-behavior: auto; } }
+
+/* Бөлімдердің акцент түстері (--accent әр бетте беріледі) */
+.accent-bg { background-color: var(--accent); }
+.accent-text { color: var(--accent); }
+.accent-border { border-color: var(--accent); }
+.accent-soft { background-color: color-mix(in srgb, var(--accent) 10%, white); }
