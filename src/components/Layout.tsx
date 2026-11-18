@@ -52,7 +52,7 @@ export default function Layout({ children }: { children: ReactNode }) {
             <p className="flex items-start gap-2"><MapPin className="mt-0.5 h-4 w-4 shrink-0 text-gold" aria-hidden="true" />{AUTHOR.school}</p>
           </div>
         </div>
-        <p className="border-t border-white/10 py-4 text-center text-xs text-white/50">© {new Date().getFullYear()} Барлық құқықтар қорғалған</p>
+        <p className="border-t border-white/10 py-4 text-center text-xs text-white/50">© {new Date().getFullYear()} Барлық құқықтар қорғалған · <Link to="/admin" className="hover:underline">Әкімші</Link></p>
       </footer>
     </div>
   )

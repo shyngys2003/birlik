@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useContent } from '../content-store'
 import { Link } from 'react-router-dom'
 import { GraduationCap, Play, ArrowDown, Handshake, Star, BrainCircuit, TrendingUp, ThumbsUp, Heart, BookOpen, Send, ImagePlus } from 'lucide-react'
 
@@ -13,6 +14,9 @@ const glow = { filter: 'drop-shadow(0 0 10px rgba(255,215,130,.85))' }
 
 export default function Hero() {
   const [photoOk, setPhotoOk] = useState(true)
+  const { content } = useContent()
+  const heroSrc = content.site.heroPhoto || 'hero-photo.jpg'
+  useEffect(() => setPhotoOk(true), [heroSrc])
   return (
     <div className="relative overflow-hidden bg-navy-950 text-white">
       <div aria-hidden="true" className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 55% 60% at 82% 30%, rgba(120,170,255,.55), transparent 62%), radial-gradient(ellipse 35% 35% at 88% 52%, rgba(255,190,110,.45), transparent 65%), linear-gradient(135deg,#071536 0%,#0B1F4B 45%,#12306B 100%)' }} />
@@ -62,7 +66,7 @@ export default function Hero() {
           <p className="absolute right-0 top-14 w-44 -rotate-6 text-right text-xl text-white/90" style={{ fontFamily: '"Marck Script", cursive' }}>Бірлік – бақыттың бастауы!</p>
 
           {photoOk ? (
-            <img src="hero-photo.jpg" alt="Сынып оқушылары" onError={() => setPhotoOk(false)}
+            <img src={heroSrc} alt="Сынып оқушылары" onError={() => setPhotoOk(false)}
               className="absolute inset-x-0 bottom-0 h-3/5 w-full rounded-2xl object-cover object-top" />
           ) : (
             <div role="img" aria-label="Орын: сынып фотосы" className="absolute inset-x-0 bottom-6 flex h-2/5 flex-col items-center justify-center gap-1 rounded-2xl border-2 border-dashed border-white/40 bg-white/10 p-4 text-center backdrop-blur">

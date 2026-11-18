@@ -1,10 +1,11 @@
 import type { CSSProperties } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { ArrowLeft, ArrowRight, Target, BookOpen, Lightbulb, School, Images, BarChart3, ClipboardList, Download, CheckCircle2, FileText, ListChecks, CalendarDays, Trophy, MessageSquareQuote } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Target, BookOpen, Lightbulb, School, Images, BarChart3, ClipboardList, Download, CheckCircle2 } from 'lucide-react'
 import { DIRECTIONS } from '../data'
 import { CONTENT } from '../content'
 import Ornament from '../components/Ornament'
-import Placeholder from '../components/Placeholder'
+import { Experience, Results, Resources } from '../components/ContentBlocks'
+import { useContent } from '../content-store'
 import SectionNav from '../components/SectionNav'
 import Block from '../components/Block'
 import Gallery from '../components/Gallery'
@@ -13,6 +14,8 @@ const RESOURCES = ['Әдістемелік нұсқаулық', 'Іс-шара �
 
 export default function DirectionPage() {
   const { slug = '' } = useParams()
+  const { content } = useContent()
+  const sd = content.steps[slug] ?? {}
   const i = DIRECTIONS.findIndex(d => d.slug === slug)
   const c = CONTENT[slug]
   if (i < 0 || !c) return <div className="py-32 text-center text-xl">Бет табылмады</div>
@@ -70,22 +73,15 @@ export default function DirectionPage() {
         </Block>
 
         <Block n={4} title="Біздің сынып тәжірибесі" icon={School}>
-          <div className="grid gap-4 md:grid-cols-2">
-            <Placeholder label="Іс-шара сипаттамасы" hint="Нақты іс-шаралар сипаттамасы кейінірек толтырылады" icon={FileText} className="min-h-36" />
-            <Placeholder label="Өткізілген уақыты мен орны" hint="Күні мен орны кейінірек қосылады" icon={CalendarDays} className="min-h-36" />
-          </div>
+          <Experience d={sd} />
         </Block>
 
         <Block n={5} title="Фото және бейне галерея" icon={Images}>
-          <Gallery />
+          <Gallery photos={sd.photos} videos={sd.videos} />
         </Block>
 
         <Block n={6} title="Нәтиже және дәлелдер" icon={BarChart3}>
-          <div className="grid gap-4 md:grid-cols-3">
-            <Placeholder label="Нәтиже көрсеткіштері" hint="Нақты деректер кейінірек қосылады" icon={ListChecks} className="min-h-36" />
-            <Placeholder label="Дәлелдер: грамоталар, куәліктер" hint="Сканерленген құжаттар кейінірек жүктеледі" icon={Trophy} className="min-h-36" />
-            <Placeholder label="Оқушылар мен ата-аналар пікірі" hint="Пікірлер кейінірек қосылады" icon={MessageSquareQuote} className="min-h-36" />
-          </div>
+          <Results d={sd} />
         </Block>
 
         <Block n={7} title="Сынып жетекшілеріне практикалық ұсыныстар" icon={ClipboardList}>
@@ -100,16 +96,7 @@ export default function DirectionPage() {
         </Block>
 
         <Block n={8} title="Әдістемелік ресурстар" icon={Download}>
-          <div className="grid gap-4 md:grid-cols-3">
-            {RESOURCES.map(r => (
-              <div key={r} className="flex flex-col gap-3 rounded-2xl border border-sky-line p-4">
-                <p className="font-semibold">{r}</p>
-                <button disabled className="mt-auto inline-flex cursor-not-allowed items-center justify-center gap-2 rounded-full bg-sky-soft px-4 py-2 text-sm font-semibold text-navy-700/60">
-                  <Download className="h-4 w-4" aria-hidden="true" />Файл кейінірек жүктеледі
-                </button>
-              </div>
-            ))}
-          </div>
+          <Resources d={sd} />
         </Block>
 
         <div className="flex justify-between gap-4 pt-4">
