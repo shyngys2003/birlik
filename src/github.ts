@@ -7,7 +7,7 @@ export class AuthError extends Error {}
 async function call(t: string, path: string, init: RequestInit = {}) {
   const r = await fetch(`${API}${path}`, {
     ...init, cache: 'no-store',
-    headers: { Authorization: `Bearer ${t}`, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' },
+    headers: { Authorization: `Bearer ${t}`, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28', ...(init.body ? { 'Content-Type': 'application/json' } : {}) },
   })
   if (r.status === 401 || r.status === 403) throw new AuthError()
   return r
@@ -20,7 +20,14 @@ export async function checkAccess(t: string) {
   const r = await call(t, `/repos/${REPO}`)
   if (!r.ok) return false
   const j = await r.json()
-  return Boolean(j.permissions?.push)
+  if (!j.permissions?.push) return false
+  // A fixed, unreferenced blob checks actual token write rights without a commit.
+  const probe = await call(t, `/repos/${REPO}/git/blobs`, {
+    method: 'POST', body: JSON.stringify({ content: 'birlik-admin-access-check', encoding: 'utf-8' }),
+  })
+  if (probe.status === 404) return false
+  if (!probe.ok) throw new Error(`access ${probe.status}`)
+  return true
 }
 
 export async function readContent(t: string): Promise<{ content: SiteContent; sha?: string }> {

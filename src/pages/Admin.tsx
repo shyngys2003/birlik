@@ -12,8 +12,8 @@ type Tab = 'home' | 'steps' | 'ach' | 'settings'
 type MediaKind = 'photos' | 'evidence'
 
 const KEY = 'birlik_admin_token'
-const lsGet = () => { try { return localStorage.getItem(KEY) ?? '' } catch { return '' } }
-const lsSet = (v: string) => { try { if (v) localStorage.setItem(KEY, v); else localStorage.removeItem(KEY) } catch { /* ignore */ } }
+const SESSION_MS = 60 * 60 * 1000
+const clearLegacyToken = () => { try { localStorage.removeItem(KEY); sessionStorage.removeItem(KEY) } catch { /* storage disabled */ } }
 
 const inp = 'w-full rounded-xl border border-sky-line bg-white px-3 py-2 text-sm'
 const btn = 'inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition'
@@ -44,7 +44,8 @@ function ImageField({ label, src, onPick }: { label: string; src: string; onPick
 }
 
 export default function Admin() {
-  const [token, setToken] = useState(lsGet)
+  const [token, setToken] = useState('')
+  const [expiresAt, setExpiresAt] = useState(0)
   const [input, setInput] = useState('')
   const [ready, setReady] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -66,10 +67,27 @@ export default function Admin() {
     try {
       if (!(await checkAccess(t))) throw new AuthError()
       const { content: c } = await readContent(t)
-      lsSet(t); setToken(t); setContent(c); setSnap(JSON.stringify(c)); setReady(true)
-    } catch (e) { fail(e); setReady(false) } finally { setBusy(false) }
+      const remote = JSON.stringify(c)
+      // Retain an in-memory draft after relogin if the published data is unchanged.
+      if (snap && dirty && remote !== snap) {
+        if (!window.confirm('Сайт мазмұны өзгерген. Жарияланбаған өзгерістерді өшіріп, жаңа нұсқаны ашасыз ба?')) return
+        setContent(c); setSnap(remote); setPending({})
+      } else if (!snap || !dirty) { setContent(c); setSnap(remote); setPending({}) }
+      setInput(''); setToken(t); setExpiresAt(Date.now() + SESSION_MS); setReady(true)
+    } catch (e) { fail(e); setToken(''); setInput(''); setReady(false) } finally { setBusy(false) }
   }
-  useEffect(() => { if (token) void login(token) }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { clearLegacyToken() }, [])
+  function lock(message: string) {
+    setToken(''); setInput(''); setReady(false); setExpiresAt(0); clearLegacyToken(); err(message)
+  }
+  useEffect(() => {
+    if (!ready || busy) return
+    const expire = () => { if (Date.now() >= expiresAt) lock('Сеанс аяқталды. Кодты қайта енгізіңіз. Жарияланбаған өзгерістер осы бетте сақталады.') }
+    const timer = window.setTimeout(expire, Math.max(0, expiresAt - Date.now()))
+    window.addEventListener('focus', expire)
+    document.addEventListener('visibilitychange', expire)
+    return () => { window.clearTimeout(timer); window.removeEventListener('focus', expire); document.removeEventListener('visibilitychange', expire) }
+  }, [ready, expiresAt, busy])
 
   const dirty = JSON.stringify(content) !== snap || Object.keys(pending).length > 0
   const upd = (fn: (c: SiteContent) => void) => setContent(prev => { const n = structuredClone(prev); fn(n); return n })
@@ -97,6 +115,7 @@ export default function Admin() {
   }
 
   async function publish() {
+    if (!token || Date.now() >= expiresAt) { lock('Сеанс аяқталды. Кодты қайта енгізіңіз.'); return }
     setBusy(true); setMsg(null)
     try {
       const used = JSON.stringify(content)
@@ -104,9 +123,15 @@ export default function Admin() {
       await publishAll(token, files, content)
       setPending({}); setSnap(JSON.stringify(content))
       setMsg({ ok: true, text: 'Жарияланды! Сайт 1–2 минуттан кейін жаңарады.' })
-    } catch (e) { fail(e) } finally { setBusy(false) }
+    } catch (e) {
+      if (e instanceof AuthError) lock('Код жарамсыз немесе жазуға рұқсат жоқ. Кодты қайта енгізіңіз.')
+      else fail(e)
+    } finally { setBusy(false) }
   }
-  const logout = () => { lsSet(''); setToken(''); setReady(false); setInput(''); setPending({}) }
+  const logout = () => {
+    if (dirty && !window.confirm('Жарияланбаған өзгерістер жоғалады. Шығасыз ба?')) return
+    clearLegacyToken(); setToken(''); setReady(false); setInput(''); setPending({}); setExpiresAt(0); setSnap(''); setContent({ site: {}, steps: {}, achievements: [] }); setMsg(null)
+  }
 
   const setSite = (k: keyof SiteContent['site'], v: string) => upd(c => { c.site[k] = v })
   const pickSite = (k: 'heroPhoto' | 'authorPhoto' | 'socialQr' | 'logoPhoto') => async (f: File) => { const [p] = await addImages([f]); if (p) setSite(k, p) }
@@ -136,7 +161,7 @@ export default function Admin() {
       <div className="mx-auto max-w-md px-4 py-16">
         <Card title="Әкімші панелі">
           <p className="flex items-center gap-2 text-sm text-navy-800"><Lock className="h-4 w-4 text-gold" aria-hidden="true" />Сайтқа фото мен мәтін қосу үшін кіру кодын (токен) енгізіңіз.</p>
-          <Field label="Кіру коды (токен)"><input type="password" className={inp} value={input} onChange={e => setInput(e.target.value)} autoComplete="off" /></Field>
+          <Field label="Кіру коды (токен)"><input type="password" className={inp} value={input} onChange={e => setInput(e.target.value)} autoComplete="off" disabled={busy} onKeyDown={e => { if (e.key === 'Enter' && !busy && input.trim()) void login(input.trim()) }} /></Field>
           {msg && <p role="alert" className="text-sm font-medium text-red-700">{msg.text}</p>}
           <button disabled={busy || !input.trim()} onClick={() => login(input.trim())} className={`${btn} bg-navy-900 text-white hover:bg-navy-700 disabled:opacity-50`}>{busy ? 'Тексерілуде…' : 'Кіру'}</button>
         </Card>
@@ -150,7 +175,7 @@ export default function Admin() {
         <button disabled={busy || !dirty} onClick={publish} className={`${btn} bg-gold text-navy-950 disabled:opacity-50`}><Send className="h-4 w-4" aria-hidden="true" />{busy ? 'Жарияланып жатыр…' : 'Жариялау'}</button>
         <span className="text-sm text-navy-800">{dirty ? 'Жарияланбаған өзгерістер бар' : 'Өзгерістер жоқ'}</span>
         <a href={SITE_URL} target="_blank" rel="noopener noreferrer" className="ml-auto text-sm underline">Сайтты ашу</a>
-        <button onClick={logout} className={`${btn} bg-sky-soft`}><LogOut className="h-4 w-4" aria-hidden="true" />Шығу</button>
+        <button disabled={busy} onClick={logout} className={`${btn} bg-sky-soft`}><LogOut className="h-4 w-4" aria-hidden="true" />Шығу</button>
       </div>
       {msg && <p role="status" className={`rounded-xl p-3 text-sm font-medium ${msg.ok ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-700'}`}>{msg.text}</p>}
       <p className="flex gap-2 rounded-xl bg-amber-50 p-3 text-sm text-amber-900"><AlertTriangle className="h-5 w-5 shrink-0" aria-hidden="true" />Сайт барлығына ашық. Балалардың фотосы мен аты-жөнін тек ата-аналардың келісімімен жариялаңыз.</p>
