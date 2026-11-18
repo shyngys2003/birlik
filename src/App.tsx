@@ -1,3 +1,4 @@
+import { CustomPage, ExtraBlocks } from './components/BuilderView'
 import { Routes, Route, useLocation } from 'react-router-dom'
 import { useEffect } from 'react'
 import Layout from './components/Layout'
@@ -22,8 +23,9 @@ export default function App() {
     <Layout>
       <ScrollManager />
       <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/qadam/:slug" element={<DirectionPage />} />
+        <Route path="/" element={<ExtraBlocks target="home"><Home /></ExtraBlocks>} />
+        <Route path="/qadam/:slug" element={<ExtraBlocks><DirectionPage /></ExtraBlocks>} />
+        <Route path="/page/:id" element={<CustomPage />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="*" element={<div className="py-32 text-center text-xl">Бет табылмады</div>} />
       </Routes>

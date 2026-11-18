@@ -1,3 +1,5 @@
+import BuilderEditor from '../components/BuilderEditor'
+import { blankBuilder } from '../builder'
 import SettingsEditor from '../components/SettingsEditor'
 import { directions } from '../site-settings'
 import { useEffect, useState, type ReactNode } from 'react'
@@ -8,7 +10,7 @@ import { AuthError, checkAccess, readContent, publishAll, imageToB64, fileToB64,
 import type { SiteContent, StepData } from '../content-store'
 
 type Pending = Record<string, { b64: string; preview: string }>
-type Tab = 'home' | 'steps' | 'ach' | 'settings'
+type Tab = 'home' | 'steps' | 'ach' | 'settings' | 'builder'
 type MediaKind = 'photos' | 'evidence'
 
 const KEY = 'birlik_admin_token'
@@ -181,11 +183,12 @@ export default function Admin() {
       <p className="flex gap-2 rounded-xl bg-amber-50 p-3 text-sm text-amber-900"><AlertTriangle className="h-5 w-5 shrink-0" aria-hidden="true" />Сайт барлығына ашық. Балалардың фотосы мен аты-жөнін тек ата-аналардың келісімімен жариялаңыз.</p>
 
       <div role="tablist" className="flex flex-wrap gap-2">
-        {([['settings','Сайт баптаулары'], ['home', 'Басты бет'], ['steps', 'Алты қадам'], ['ach', 'Жетістіктер']] as [Tab, string][]).map(([id, l]) => (
+        {([['builder','Бет конструкторы'], ['settings','Сайт баптаулары'], ['home', 'Басты бет'], ['steps', 'Алты қадам'], ['ach', 'Жетістіктер']] as [Tab, string][]).map(([id, l]) => (
           <button key={id} role="tab" aria-selected={tab === id} onClick={() => setTab(id)} className={`${btn} ${tab === id ? 'bg-navy-900 text-white' : 'bg-white shadow-card'}`}>{l}</button>
         ))}
       </div>
 
+      {tab === 'builder' && <Card title="Бет конструкторы"><BuilderEditor value={content.builder} settings={content.settings} busy={busy} onChange={fn=>upd(c=>fn(c.builder??=blankBuilder()))} show={show} upload={async(f,k)=>{setBusy(true);try{return k==='image'?(await addImages([f]))[0]||null:await addDoc(f)}catch{err('Файлды оқу мүмкін болмады.');return null}finally{setBusy(false)}}}/></Card>}
       {tab === 'settings' && <Card title="Сайт баптаулары"><ImageField label="Сайт логотипі" src={show(content.site.logoPhoto)} onPick={pickSite('logoPhoto')} /><button className={btn} onClick={()=>setSite('logoPhoto','')}>Логотипті алып тастау</button><SettingsEditor value={content.settings} onChange={v=>upd(c=>{c.settings=v})}/></Card>}
       {tab === 'home' && (
         <Card title="Басты бет">

@@ -14,6 +14,7 @@ export default function Layout({ children }: { children: ReactNode }) {
   const {content} = useContent()
   const settings = content.settings
   useEffect(()=>{document.title=txt(settings,"projectTitle")},[settings])
+  const custom = (content.builder?.pages ?? []).filter(p=>p.inMenu&&!p.hidden)
   const nav = menu(settings).filter(n=>!n.hidden)
   const [open, setOpen] = useState(false)
   const navigate = useNavigate()
@@ -31,6 +32,7 @@ export default function Layout({ children }: { children: ReactNode }) {
             {nav.map(n => (
               <button key={n.id} onClick={() => go(n.id)} className="inline-flex items-center gap-2 rounded-full px-2.5 py-2 text-[13px] font-medium text-white/85 transition hover:bg-white/10 hover:text-white"><NavIcon id={n.id} />{n.label}</button>
             ))}
+            {custom.length>0 && <details className="relative"><summary className="cursor-pointer px-3 py-2 text-sm">Қосымша</summary><div className="absolute right-0 top-full min-w-48 rounded-xl bg-navy-950 p-2 shadow-card">{custom.map(p=><Link key={p.id} to={`/page/${p.id}`} onClick={e=>e.currentTarget.closest("details")?.removeAttribute("open")} className="block rounded-lg px-3 py-2 hover:bg-white/10">{p.title}</Link>)}</div></details>}
           </nav>
           <button className="rounded-xl p-2 text-white xl:hidden" onClick={() => setOpen(!open)} aria-expanded={open} aria-controls="mobile-nav" aria-label={open ? 'Мәзірді жабу' : 'Мәзірді ашу'}>
             {open ? <X /> : <Menu />}
@@ -41,6 +43,7 @@ export default function Layout({ children }: { children: ReactNode }) {
             {nav.map(n => (
               <button key={n.id} onClick={() => go(n.id)} className="block w-full rounded-xl px-3 py-3 text-left font-medium text-white hover:bg-white/10">{n.label}</button>
             ))}
+            {custom.map(p=><Link key={p.id} to={`/page/${p.id}`} onClick={()=>setOpen(false)} className="block rounded-xl px-3 py-3 text-white">{p.title}</Link>)}
           </nav>
         )}
       </header>
