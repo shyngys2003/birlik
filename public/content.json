@@ -1,1 +1,10 @@
-{ "site": {}, "steps": {}, "achievements": [] }
+{
+  "settings": {
+    "texts": {
+      "brand": "выасвысы"
+    }
+  },
+  "site": {},
+  "steps": {},
+  "achievements": []
+}
