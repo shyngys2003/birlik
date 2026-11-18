@@ -21,3 +21,7 @@ body { @apply bg-sky-soft font-sans text-navy-900 antialiased; }
 .accent-text { color: var(--accent); }
 .accent-border { border-color: var(--accent); }
 .accent-soft { background-color: color-mix(in srgb, var(--accent) 10%, white); }
+
+:root { --navy-950:7 21 54;--navy-900:11 31 75;--navy-800:18 48 107;--navy-700:27 66 144;--sky-soft:234 241 251;--sky-line:211 225 245;--gold:201 162 75;--gold-light:232 211 154; }
+.site-shell {font-family:var(--site-font,Inter,system-ui,sans-serif)}
+.site-shell .rounded-3xl {border-radius:var(--site-radius,24px)}

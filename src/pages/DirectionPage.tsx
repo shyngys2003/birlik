@@ -1,3 +1,4 @@
+import { directions, sectionContent, txt } from '../site-settings'
 import type { CSSProperties } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { ArrowLeft, ArrowRight, Target, BookOpen, Lightbulb, School, Images, BarChart3, ClipboardList, Download, CheckCircle2 } from 'lucide-react'
@@ -16,11 +17,12 @@ export default function DirectionPage() {
   const { slug = '' } = useParams()
   const { content } = useContent()
   const sd = content.steps[slug] ?? {}
-  const i = DIRECTIONS.findIndex(d => d.slug === slug)
-  const c = CONTENT[slug]
+  const ds = directions(content.settings)
+  const i = ds.findIndex(d => d.slug === slug)
+  const c = sectionContent(content.settings,slug)
   if (i < 0 || !c) return <div className="py-32 text-center text-xl">Бет табылмады</div>
-  const d = DIRECTIONS[i]
-  const prev = DIRECTIONS[i - 1], next = DIRECTIONS[i + 1]
+  const d = ds[i]
+  const prev = ds[i - 1], next = ds[i + 1]
   const Icon = d.icon
 
   return (
@@ -34,7 +36,7 @@ export default function DirectionPage() {
             <span className="accent-bg flex h-20 w-20 shrink-0 items-center justify-center rounded-3xl font-serif text-5xl font-extrabold text-white">{d.letter}</span>
             <div>
               <h1 className="font-serif text-3xl font-extrabold sm:text-5xl">{d.title}</h1>
-              <p className="mt-2 flex items-center gap-2 text-gold-light"><Icon className="h-5 w-5" aria-hidden="true" />БІРЛІК моделінің {i + 1}-қадамы</p>
+              <p className="mt-2 flex items-center gap-2 text-gold-light"><Icon className="h-5 w-5" aria-hidden="true" />{txt(content.settings,"brand")} моделінің {i + 1}-қадамы</p>
             </div>
           </div>
           <Ornament className="mt-6 max-w-xs" />

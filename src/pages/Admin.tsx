@@ -1,3 +1,5 @@
+import SettingsEditor from '../components/SettingsEditor'
+import { directions } from '../site-settings'
 import { useEffect, useState, type ReactNode } from 'react'
 import { Upload, Trash2, LogOut, Send, Plus, Lock, AlertTriangle } from 'lucide-react'
 import { DIRECTIONS } from '../data'
@@ -6,7 +8,7 @@ import { AuthError, checkAccess, readContent, publishAll, imageToB64, fileToB64,
 import type { SiteContent, StepData } from '../content-store'
 
 type Pending = Record<string, { b64: string; preview: string }>
-type Tab = 'home' | 'steps' | 'ach'
+type Tab = 'home' | 'steps' | 'ach' | 'settings'
 type MediaKind = 'photos' | 'evidence'
 
 const KEY = 'birlik_admin_token'
@@ -107,7 +109,7 @@ export default function Admin() {
   const logout = () => { lsSet(''); setToken(''); setReady(false); setInput(''); setPending({}) }
 
   const setSite = (k: keyof SiteContent['site'], v: string) => upd(c => { c.site[k] = v })
-  const pickSite = (k: 'heroPhoto' | 'authorPhoto' | 'socialQr') => async (f: File) => { const [p] = await addImages([f]); if (p) setSite(k, p) }
+  const pickSite = (k: 'heroPhoto' | 'authorPhoto' | 'socialQr' | 'logoPhoto') => async (f: File) => { const [p] = await addImages([f]); if (p) setSite(k, p) }
   const s = content.steps[step] ?? {}
 
   const mediaList = (kind: MediaKind, label: string) => (
@@ -153,12 +155,13 @@ export default function Admin() {
       {msg && <p role="status" className={`rounded-xl p-3 text-sm font-medium ${msg.ok ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-700'}`}>{msg.text}</p>}
       <p className="flex gap-2 rounded-xl bg-amber-50 p-3 text-sm text-amber-900"><AlertTriangle className="h-5 w-5 shrink-0" aria-hidden="true" />Сайт барлығына ашық. Балалардың фотосы мен аты-жөнін тек ата-аналардың келісімімен жариялаңыз.</p>
 
-      <div role="tablist" className="flex gap-2">
-        {([['home', 'Басты бет'], ['steps', 'Алты қадам'], ['ach', 'Жетістіктер']] as [Tab, string][]).map(([id, l]) => (
+      <div role="tablist" className="flex flex-wrap gap-2">
+        {([['settings','Сайт баптаулары'], ['home', 'Басты бет'], ['steps', 'Алты қадам'], ['ach', 'Жетістіктер']] as [Tab, string][]).map(([id, l]) => (
           <button key={id} role="tab" aria-selected={tab === id} onClick={() => setTab(id)} className={`${btn} ${tab === id ? 'bg-navy-900 text-white' : 'bg-white shadow-card'}`}>{l}</button>
         ))}
       </div>
 
+      {tab === 'settings' && <Card title="Сайт баптаулары"><ImageField label="Сайт логотипі" src={show(content.site.logoPhoto)} onPick={pickSite('logoPhoto')} /><button className={btn} onClick={()=>setSite('logoPhoto','')}>Логотипті алып тастау</button><SettingsEditor value={content.settings} onChange={v=>upd(c=>{c.settings=v})}/></Card>}
       {tab === 'home' && (
         <Card title="Басты бет">
           <ImageField label="Басты беттегі сынып фотосы" src={show(content.site.heroPhoto)} onPick={pickSite('heroPhoto')} />
@@ -173,7 +176,7 @@ export default function Admin() {
         <Card title="Алты қадам">
           <Field label="Қадамды таңдаңыз">
             <select className={inp} value={step} onChange={e => setStep(e.target.value)}>
-              {DIRECTIONS.map((d, i) => <option key={d.slug} value={d.slug}>{i + 1}. {d.title}</option>)}
+              {directions(content.settings).map((d, i) => <option key={d.slug} value={d.slug}>{i + 1}. {d.title}</option>)}
             </select>
           </Field>
           <Field label="Өткізілген уақыты мен орны"><input className={inp} value={s.whenWhere ?? ''} onChange={e => upd(c => { sd(c).whenWhere = e.target.value })} /></Field>

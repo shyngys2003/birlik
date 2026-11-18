@@ -1,3 +1,4 @@
+import type { SiteSettings } from './site-settings'
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 
 export interface Media { src: string; caption?: string }
@@ -9,7 +10,8 @@ export interface StepData {
 }
 export interface Achievement { title: string; text?: string; photo?: string }
 export interface SiteContent {
-  site: { heroPhoto?: string; authorPhoto?: string; authorBio?: string; socialUrl?: string; socialQr?: string }
+  settings?: SiteSettings
+  site: { logoPhoto?: string; heroPhoto?: string; authorPhoto?: string; authorBio?: string; socialUrl?: string; socialQr?: string }
   steps: Record<string, StepData>
   achievements: Achievement[]
 }
@@ -17,7 +19,7 @@ export interface SiteContent {
 export const EMPTY: SiteContent = { site: {}, steps: {}, achievements: [] }
 
 export function normalize(j: Partial<SiteContent> | null | undefined): SiteContent {
-  return { site: j?.site ?? {}, steps: j?.steps ?? {}, achievements: j?.achievements ?? [] }
+  return { settings: j?.settings, site: j?.site ?? {}, steps: j?.steps ?? {}, achievements: j?.achievements ?? [] }
 }
 
 const Ctx = createContext<SiteContent>(EMPTY)
