@@ -1,8 +1,48 @@
 {
   "settings": {
     "texts": {
-      "brand": "БІРЛІК"
-    }
+      "brand": "БІРЛІК",
+      "badge": "",
+      "authorName": "Каниева Макпал Кадирбековна",
+      "school": "Абай облысы білім басқармасы \"Аягөз ауданы білім бөлімі\" ММ\n «№11 жалпы орта білім беретін мектебі» КММ\n"
+    },
+    "menu": [
+      {
+        "id": "about",
+        "label": "Жоба туралы",
+        "hidden": false
+      },
+      {
+        "id": "author",
+        "label": "Автор",
+        "hidden": false
+      },
+      {
+        "id": "model",
+        "label": "БІРЛІК моделі",
+        "hidden": false
+      },
+      {
+        "id": "practice",
+        "label": "Тәжірибе",
+        "hidden": false
+      },
+      {
+        "id": "resources",
+        "label": "Сынып жетекшілерге",
+        "hidden": false
+      },
+      {
+        "id": "achievements",
+        "label": "Жетістіктер",
+        "hidden": false
+      },
+      {
+        "id": "social",
+        "label": "Байланыс",
+        "hidden": false
+      }
+    ]
   },
   "site": {},
   "steps": {},
