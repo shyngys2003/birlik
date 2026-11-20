@@ -3,7 +3,7 @@ import { Camera, Video, MessageSquareQuote, FileText, Download, Trophy, QrCode, 
 import Section from '../components/Section'
 import Hero from '../components/Hero'
 import { Achievements } from '../components/ContentBlocks'
-import { useContent } from '../content-store'
+import { HOME_RESOURCE_GROUPS, useContent } from '../content-store'
 import Placeholder from '../components/Placeholder'
 import DirectionCard from '../components/DirectionCard'
 import { AUTHOR, DIRECTIONS } from '../data'
@@ -62,15 +62,14 @@ export default function Home() {
 
       <Section key="resources" id="resources" eyebrow="Әдіскерлерге" title="Сынып жетекшілеріне арналған ресурстар">
         <div className="grid gap-5 md:grid-cols-3">
-          {['Әдістемелік нұсқаулық', 'Сынып сағаттарының сценарийлері', 'Тапсырма парақтары мен сауалнамалар'].map(t => (
-            <div key={t} className="flex flex-col gap-4 rounded-3xl border border-sky-line bg-white p-6 shadow-card">
+          {HOME_RESOURCE_GROUPS.map(group => {
+            const files = content.site.resources?.[group.id] ?? []
+            return <div key={group.id} className="flex flex-col gap-4 rounded-3xl border border-sky-line bg-white p-6 shadow-card">
               <FileText className="h-7 w-7 text-gold" aria-hidden="true" />
-              <h3 className="font-bold">{t}</h3>
-              <button disabled className="mt-auto inline-flex cursor-not-allowed items-center justify-center gap-2 rounded-full bg-sky-soft px-4 py-2 text-sm font-semibold text-navy-700/60">
-                <Download className="h-4 w-4" aria-hidden="true" /> Файл кейінірек жүктеледі
-              </button>
+              <h3 className="font-bold">{group.title}</h3>
+              {files.length ? <ul className="mt-auto space-y-2">{files.map((r,i) => <li key={`${r.file}-${i}`}><a href={r.file} download target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 rounded-xl bg-sky-soft px-4 py-3 text-sm font-semibold text-navy-900 hover:underline"><Download className="h-4 w-4 shrink-0" aria-hidden="true" /><span className="break-all">{r.title}</span></a></li>)}</ul> : <button disabled className="mt-auto inline-flex cursor-not-allowed items-center justify-center gap-2 rounded-full bg-sky-soft px-4 py-2 text-sm font-semibold text-navy-700/60"><Download className="h-4 w-4" aria-hidden="true" /> Файл кейінірек жүктеледі</button>}
             </div>
-          ))}
+          })}
         </div>
       </Section>,
 

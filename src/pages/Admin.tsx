@@ -9,10 +9,10 @@ import { Upload, Trash2, LogOut, Send, Plus, Lock, AlertTriangle } from 'lucide-
 import { DIRECTIONS } from '../data'
 import { SITE_URL } from '../config'
 import { AuthError, checkAccess, readContent, publishAll, imageToB64, fileToB64, slugName } from '../github'
-import { ACHIEVEMENT_YEARS, achievementYear, type AchievementYear, type SiteContent, type StepData } from '../content-store'
+import { HOME_RESOURCE_GROUPS, ACHIEVEMENT_YEARS, achievementYear, type AchievementYear, type SiteContent, type StepData } from '../content-store'
 
 type Pending = Record<string, { b64: string; preview: string }>
-type Tab = 'dashboard' | 'home' | 'steps' | 'ach' | 'settings' | 'builder'
+type Tab = 'resources' | 'dashboard' | 'home' | 'steps' | 'ach' | 'settings' | 'builder'
 type MediaKind = 'photos' | 'evidence'
 
 const KEY = 'birlik_admin_token'
@@ -131,7 +131,7 @@ export default function Admin() {
   }
   async function addDoc(f: File) {
     if (f.size > 25 * 1024 * 1024) { err('Файл тым үлкен (25 МБ-тан аспауы керек).'); return null }
-    const p = `uploads/files/${Date.now()}-${slugName(f.name)}`
+    const p = `uploads/files/${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${slugName(f.name)}`
     const b64 = await fileToB64(f)
     setPending(prev => ({ ...prev, [p]: { b64, preview: '' } }))
     return p
@@ -158,7 +158,7 @@ export default function Admin() {
     clearLegacyToken(); setToken(''); setReady(false); setInput(''); setPending({}); setExpiresAt(0); setSnap(''); setContent({ site: {}, steps: {}, achievements: [] }); setMsg(null)
   }
 
-  const setSite = (k: keyof SiteContent['site'], v: string) => upd(c => { c.site[k] = v })
+  const setSite = (k: Exclude<keyof SiteContent['site'], 'resources'>, v: string) => upd(c => { c.site[k] = v })
   const pickSite = (k: 'heroPhoto' | 'authorPhoto' | 'socialQr' | 'logoPhoto') => async (f: File) => { const [p] = await addImages([f]); if (p) setSite(k, p) }
   const s = content.steps[step] ?? {}
 
@@ -206,7 +206,7 @@ export default function Admin() {
       <p className="flex gap-2 rounded-xl bg-amber-50 p-3 text-sm text-amber-900"><AlertTriangle className="h-5 w-5 shrink-0" aria-hidden="true" />Сайт барлығына ашық. Балалардың фотосы мен аты-жөнін тек ата-аналардың келісімімен жариялаңыз.</p>
 
       <div role="tablist" className="flex flex-wrap gap-2">
-        {([['dashboard','Басқару тақтасы'], ['builder','Бет конструкторы'], ['settings','Сайт баптаулары'], ['home', 'Басты бет'], ['steps', 'Алты қадам'], ['ach', 'Жетістіктер']] as [Tab, string][]).map(([id, l]) => (
+        {([['dashboard','Басқару тақтасы'], ['builder','Бет конструкторы'], ['settings','Сайт баптаулары'], ['home', 'Басты бет'], ['resources', 'Ресурстар'], ['steps', 'Алты қадам'], ['ach', 'Жетістіктер']] as [Tab, string][]).map(([id, l]) => (
           <button key={id} role="tab" aria-selected={tab === id} onClick={() => setTab(id)} className={`${btn} ${tab === id ? 'bg-navy-900 text-white' : 'bg-white shadow-card'}`}>{l}</button>
         ))}
       </div>
@@ -221,7 +221,7 @@ export default function Admin() {
       {tab === 'dashboard' && <>
         <Card title="Сайт статистикасы">
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {[["Беттер",7+(content.builder?.pages.length??0)],["Фотолар",Object.values(content.steps).reduce((n,s)=>n+(s.photos?.length??0)+(s.evidence?.length??0),0)],["Құжаттар",Object.values(content.steps).reduce((n,s)=>n+(s.resources?.length??0),0)],["Жетістіктер",content.achievements.length]].map(([label,n])=><div key={label} className="rounded-2xl bg-sky-soft p-4"><p className="text-2xl font-bold">{n}</p><p className="text-sm">{label}</p></div>)}
+            {[["Беттер",7+(content.builder?.pages.length??0)],["Фотолар",Object.values(content.steps).reduce((n,s)=>n+(s.photos?.length??0)+(s.evidence?.length??0),0)],["Құжаттар",Object.values(content.steps).reduce((n,s)=>n+(s.resources?.length??0),0)+HOME_RESOURCE_GROUPS.reduce((n,g)=>n+(content.site.resources?.[g.id]?.length??0),0)],["Жетістіктер",content.achievements.length]].map(([label,n])=><div key={label} className="rounded-2xl bg-sky-soft p-4"><p className="text-2xl font-bold">{n}</p><p className="text-sm">{label}</p></div>)}
           </div><p className="text-xs">Негізгі бөлімдердегі материалдар саны. Кірушілер статистикасы емес.</p>
           {directions(content.settings).map(d=>{const s=content.steps[d.slug];return <button key={d.slug} disabled={busy} onClick={()=>{setStep(d.slug);setTab('steps')}} className="flex w-full justify-between rounded-xl border border-sky-line p-3 text-left"><span>{d.title}</span><span>{(s?.photos?.length??0)+(s?.videos?.length??0)+(s?.resources?.length??0)+(s?.evidence?.length??0)} материал</span></button>})}
         </Card>
@@ -248,6 +248,24 @@ export default function Admin() {
           <ImageField label="QR-код суреті" src={show(content.site.socialQr)} onPick={pickSite('socialQr')} />
         </Card>
       )}
+
+      {tab === 'resources' && <Card title="Сынып жетекшілеріне арналған ресурстар">
+        <p className="text-sm text-navy-800">Басты беттегі үш бөлімге құжаттар қосыңыз. Өзгерістерді сайтқа шығару үшін «Жариялау» батырмасын басыңыз.</p>
+        {HOME_RESOURCE_GROUPS.map(group => <fieldset disabled={busy} key={group.id} className="space-y-3 rounded-2xl border border-sky-line p-4 disabled:opacity-60">
+          <legend className="px-2 font-bold">{group.title}</legend>
+          {(content.site.resources?.[group.id] ?? []).map((r,i) => <div key={r.file} className="flex items-center gap-2">
+            <input aria-label="Құжат атауы" className={inp} value={r.title} onChange={e=>upd(c=>{const item=c.site.resources?.[group.id]?.[i];if(item)item.title=e.target.value})}/>
+            {pending[r.file] ? <span className="text-xs">Нобай</span> : <a href={r.file} target="_blank" rel="noopener noreferrer" className="text-sm underline">Ашу</a>}
+            <button aria-label="Өшіру" className="rounded-full p-2 text-red-700" onClick={()=>upd(c=>{c.site.resources?.[group.id]?.splice(i,1)})}><Trash2 className="h-4 w-4"/></button>
+          </div>)}
+          <Pick label="Құжат қосу" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.zip" multiple onFiles={async files=>{
+            setBusy(true);setMsg(null)
+            try { for (const f of files) { const path=await addDoc(f);if(path)upd(c=>{((c.site.resources??={})[group.id]??=[]).push({title:f.name,file:path})}) } }
+            catch {err('Файлды оқу мүмкін болмады.')} finally {setBusy(false)}
+          }}/>
+          <p className="text-xs text-navy-700">Әр файл 25 МБ-тан аспауы керек.</p>
+        </fieldset>)}
+      </Card>}
 
       {tab === 'steps' && (
         <Card title="Алты қадам">
