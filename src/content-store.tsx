@@ -9,7 +9,10 @@ export interface StepData {
   experience?: string; whenWhere?: string; results?: string
   photos?: Media[]; videos?: VideoItem[]; evidence?: Media[]; resources?: Resource[]
 }
-export interface Achievement { title: string; text?: string; photo?: string }
+export const ACHIEVEMENT_YEARS = ['2025-2026', '2026-2027'] as const
+export type AchievementYear = typeof ACHIEVEMENT_YEARS[number]
+export interface Achievement { year?: AchievementYear; title: string; text?: string; photo?: string }
+export const achievementYear = (a: Achievement): AchievementYear => a.year === '2026-2027' ? '2026-2027' : '2025-2026'
 export interface SiteContent {
   builder?: BuilderData
   settings?: SiteSettings

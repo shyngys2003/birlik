@@ -9,7 +9,7 @@ import { Upload, Trash2, LogOut, Send, Plus, Lock, AlertTriangle } from 'lucide-
 import { DIRECTIONS } from '../data'
 import { SITE_URL } from '../config'
 import { AuthError, checkAccess, readContent, publishAll, imageToB64, fileToB64, slugName } from '../github'
-import type { SiteContent, StepData } from '../content-store'
+import { ACHIEVEMENT_YEARS, achievementYear, type AchievementYear, type SiteContent, type StepData } from '../content-store'
 
 type Pending = Record<string, { b64: string; preview: string }>
 type Tab = 'dashboard' | 'home' | 'steps' | 'ach' | 'settings' | 'builder'
@@ -37,11 +37,11 @@ function Pick({ label, accept, multiple, onFiles }: { label: string; accept: str
     </label>
   )
 }
-function ImageField({ label, src, onPick }: { label: string; src: string; onPick: (f: File) => void }) {
+function ImageField({ label, src, onPick, circle = false }: { label: string; src: string; onPick: (f: File) => void; circle?: boolean }) {
   return (
     <div className="space-y-2">
       <p className="text-sm font-semibold text-navy-900">{label}</p>
-      {src && <img src={src} alt="" className="h-32 rounded-xl border border-sky-line object-cover" />}
+      {src && <img src={src} alt="" className={`h-32 border border-sky-line object-cover ${circle ? 'w-32 rounded-full' : 'rounded-xl'}`} />}
       <Pick label={src ? 'Суретті ауыстыру' : 'Сурет таңдау'} accept="image/*" onFiles={f => onPick(f[0])} />
     </div>
   )
@@ -242,7 +242,7 @@ export default function Admin() {
       {tab === 'home' && (
         <Card title="Басты бет">
           <ImageField label="Басты беттегі сынып фотосы" src={show(content.site.heroPhoto)} onPick={pickSite('heroPhoto')} />
-          <ImageField label="Автордың фотосы" src={show(content.site.authorPhoto)} onPick={pickSite('authorPhoto')} />
+          <ImageField circle label="Автордың фотосы" src={show(content.site.authorPhoto)} onPick={pickSite('authorPhoto')} />
           <Field label="Автор туралы қысқаша мәлімет"><textarea rows={5} className={inp} value={content.site.authorBio ?? ''} onChange={e => setSite('authorBio', e.target.value)} /></Field>
           <Field label="Әлеуметтік желі сілтемесі (https://…)"><input className={inp} value={content.site.socialUrl ?? ''} onChange={e => setSite('socialUrl', e.target.value)} /></Field>
           <ImageField label="QR-код суреті" src={show(content.site.socialQr)} onPick={pickSite('socialQr')} />
@@ -256,8 +256,6 @@ export default function Admin() {
               {directions(content.settings).map((d, i) => <option key={d.slug} value={d.slug}>{i + 1}. {d.title}</option>)}
             </select>
           </Field>
-          <Field label="Өткізілген уақыты мен орны"><input className={inp} value={s.whenWhere ?? ''} onChange={e => upd(c => { sd(c).whenWhere = e.target.value })} /></Field>
-          <Field label="Біздің сынып тәжірибесі (мәтін)"><textarea rows={5} className={inp} value={s.experience ?? ''} onChange={e => upd(c => { sd(c).experience = e.target.value })} /></Field>
           <Field label="Нәтиже мен дәлелдер (мәтін)"><textarea rows={4} className={inp} value={s.results ?? ''} onChange={e => upd(c => { sd(c).results = e.target.value })} /></Field>
           {mediaList('photos', 'Фотолар')}
           {mediaList('evidence', 'Дәлел құжаттары (грамота, куәлік суреттері)')}
@@ -303,15 +301,19 @@ export default function Admin() {
 
       {tab === 'ach' && (
         <Card title="Оқушылар жетістіктері">
-          {content.achievements.map((a, i) => (
+          {ACHIEVEMENT_YEARS.map(year => <div key={year} className="space-y-4 rounded-2xl border border-sky-line p-4">
+          <h3 className="text-lg font-bold">{year.replace('-', '–')} оқу жылы</h3>
+          {content.achievements.map((a, i) => achievementYear(a) !== year ? null : (
             <div key={i} className="space-y-3 rounded-2xl border border-sky-line p-4">
               <Field label="Атауы"><input className={inp} value={a.title} onChange={e => upd(c => { c.achievements[i].title = e.target.value })} /></Field>
               <Field label="Сипаттамасы"><textarea rows={3} className={inp} value={a.text ?? ''} onChange={e => upd(c => { c.achievements[i].text = e.target.value })} /></Field>
-              <ImageField label="Сурет" src={show(a.photo)} onPick={async f => { const [p] = await addImages([f]); if (p) upd(c => { c.achievements[i].photo = p }) }} />
+              <Field label="Оқу жылы"><select className={inp} value={achievementYear(a)} onChange={e => upd(c => { c.achievements[i].year = e.target.value as AchievementYear })}>{ACHIEVEMENT_YEARS.map(y => <option key={y} value={y}>{y}</option>)}</select></Field>
+              <ImageField circle label="Сурет" src={show(a.photo)} onPick={async f => { const [p] = await addImages([f]); if (p) upd(c => { c.achievements[i].photo = p }) }} />
               <button className={`${btn} bg-red-50 text-red-700 hover:bg-red-100`} onClick={() => upd(c => { c.achievements.splice(i, 1) })}><Trash2 className="h-4 w-4" aria-hidden="true" />Карточканы өшіру</button>
             </div>
           ))}
-          <button className={`${btn} bg-sky-soft`} onClick={() => upd(c => { c.achievements.push({ title: '' }) })}><Plus className="h-4 w-4" aria-hidden="true" />Жаңа карточка қосу</button>
+          <button className={`${btn} bg-sky-soft`} onClick={() => upd(c => { c.achievements.push({ title: '', year }) })}><Plus className="h-4 w-4" aria-hidden="true" />Жаңа карточка қосу</button>
+          </div>)}
         </Card>
       )}
       </fieldset>

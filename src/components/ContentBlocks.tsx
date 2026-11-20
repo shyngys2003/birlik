@@ -1,6 +1,6 @@
 import { CalendarDays, FileText, ListChecks, Trophy, MessageSquareQuote, FileDown } from 'lucide-react'
 import Placeholder from './Placeholder'
-import type { Achievement, StepData } from '../content-store'
+import { ACHIEVEMENT_YEARS, achievementYear, type Achievement, type StepData } from '../content-store'
 
 const RESOURCES = ['Әдістемелік нұсқаулық', 'Іс-шара сценарийі', 'Тапсырма парақтары мен сауалнамалар']
 
@@ -75,25 +75,23 @@ export function Resources({ d }: { d: StepData }) {
 }
 
 export function Achievements({ items }: { items: Achievement[] }) {
-  if (items.length === 0) {
-    return (
-      <div className="grid gap-5 sm:grid-cols-3">
-        {[1, 2, 3].map(n => <Placeholder key={n} label={`Жетістік карточкасы ${n}`} hint="Нақты деректер кейінірек қосылады" icon={Trophy} className="min-h-40" />)}
-      </div>
-    )
-  }
   return (
-    <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-      {items.map((a, i) => (
-        <article key={i} className="overflow-hidden rounded-3xl border border-sky-line bg-white shadow-card">
-          {a.photo && <img src={a.photo} alt={a.title} loading="lazy" className="aspect-video w-full object-cover" />}
-          <div className="p-5">
-            <Trophy className="h-6 w-6 text-gold" aria-hidden="true" />
-            <h3 className="mt-2 font-bold">{a.title}</h3>
-            {a.text && <p className="mt-1 text-sm leading-relaxed text-navy-800/80">{a.text}</p>}
+    <div className="grid items-start gap-5 lg:grid-cols-2">
+      {ACHIEVEMENT_YEARS.map(year => {
+        const list = items.filter(a => achievementYear(a) === year)
+        return <section key={year} className="rounded-3xl border border-sky-line bg-white p-5 shadow-card">
+          <h3 className="flex items-center gap-2 font-serif text-xl font-bold"><CalendarDays className="h-6 w-6 text-gold" aria-hidden="true" />{year.replace('-', '–')} оқу жылы</h3>
+          <div className="mt-5 grid gap-4 sm:grid-cols-2">
+            {list.length === 0 && <p className="col-span-full rounded-2xl bg-sky-soft p-5 text-sm">Жетістіктер кейінірек қосылады</p>}
+            {list.map((a, i) => <article key={i} className="rounded-2xl border border-sky-line p-4 text-center">
+              {a.photo && <a href={a.photo} target="_blank" rel="noopener noreferrer" className="mx-auto block h-32 w-32"><img src={a.photo} alt={a.title} loading="lazy" className="h-full w-full rounded-full border-2 border-gold object-cover" /></a>}
+              <Trophy className="mx-auto mt-3 h-6 w-6 text-gold" aria-hidden="true" />
+              <h4 className="mt-2 break-words font-bold">{a.title}</h4>
+              {a.text && <p className="mt-1 whitespace-pre-line break-words text-sm leading-relaxed text-navy-800/80">{a.text}</p>}
+            </article>)}
           </div>
-        </article>
-      ))}
+        </section>
+      })}
     </div>
   )
 }

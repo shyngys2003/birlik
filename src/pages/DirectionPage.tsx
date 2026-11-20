@@ -1,11 +1,11 @@
 import { directions, sectionContent, txt } from '../site-settings'
 import type { CSSProperties } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { ArrowLeft, ArrowRight, Target, BookOpen, Lightbulb, School, Images, BarChart3, ClipboardList, Download, CheckCircle2 } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Target, BookOpen, Lightbulb, Images, BarChart3, ClipboardList, Download, CheckCircle2 } from 'lucide-react'
 import { DIRECTIONS } from '../data'
 import { CONTENT } from '../content'
 import Ornament from '../components/Ornament'
-import { Experience, Results, Resources } from '../components/ContentBlocks'
+import { Results, Resources } from '../components/ContentBlocks'
 import { useContent } from '../content-store'
 import SectionNav from '../components/SectionNav'
 import Block from '../components/Block'
@@ -72,10 +72,6 @@ export default function DirectionPage() {
               </li>
             ))}
           </ul>
-        </Block>
-
-        <Block n={4} title="Біздің сынып тәжірибесі" icon={School}>
-          <Experience d={sd} />
         </Block>
 
         <Block n={5} title="Фото және бейне галерея" icon={Images}>

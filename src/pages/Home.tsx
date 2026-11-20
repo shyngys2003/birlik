@@ -36,7 +36,7 @@ export default function Home() {
 
       <Section key="author" id="author" eyebrow="Автор" title="Жоба авторы" tone="white">
         <div className="grid items-center gap-8 md:grid-cols-[240px_1fr]">
-          {content.site.authorPhoto ? <img src={content.site.authorPhoto} alt="Автордың фотосы" className="aspect-[3/4] w-full rounded-2xl object-cover shadow-card" /> : <Placeholder label="Автордың фотосы" hint="Фото кейінірек жүктеледі" className="aspect-[3/4]" />}
+          {content.site.authorPhoto ? <img src={content.site.authorPhoto} alt="Автордың фотосы" className="aspect-square w-full max-w-[240px] rounded-full border-2 border-gold object-cover shadow-card" /> : <Placeholder label="Автордың фотосы" hint="Фото кейінірек жүктеледі" className="aspect-square w-full max-w-[240px] !rounded-full" />}
           <div>
             <h3 className="font-serif text-2xl font-bold">{txt(settings,"authorName")}</h3>
             <p className="mt-2 font-medium text-navy-700">{txt(settings,"authorRole")}</p>
