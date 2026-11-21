@@ -159,7 +159,7 @@ export default function Admin() {
   }
 
   const setSite = (k: Exclude<keyof SiteContent['site'], 'resources'>, v: string) => upd(c => { c.site[k] = v })
-  const pickSite = (k: 'heroPhoto' | 'authorPhoto' | 'socialQr' | 'logoPhoto') => async (f: File) => { const [p] = await addImages([f]); if (p) setSite(k, p) }
+  const pickSite = (k: 'heroPhoto' | 'authorPhoto' | 'socialQr' | 'logoPhoto' | 'schoolEmblem') => async (f: File) => { const [p] = await addImages([f]); if (p) setSite(k, p) }
   const s = content.steps[step] ?? {}
 
   const mediaList = (kind: MediaKind, label: string) => (
@@ -238,7 +238,17 @@ export default function Admin() {
         </Card>
       </>}
       {tab === 'builder' && <Card title="Бет конструкторы"><BuilderEditor value={content.builder} settings={content.settings} busy={busy} onChange={fn=>upd(c=>fn(c.builder??=blankBuilder()))} show={show} upload={async(f,k)=>{setBusy(true);try{return k==='image'?(await addImages([f]))[0]||null:await addDoc(f)}catch{err('Файлды оқу мүмкін болмады.');return null}finally{setBusy(false)}}}/></Card>}
-      {tab === 'settings' && <Card title="Сайт баптаулары"><ImageField label="Сайт логотипі" src={show(content.site.logoPhoto)} onPick={pickSite('logoPhoto')} /><button className={btn} onClick={()=>setSite('logoPhoto','')}>Логотипті алып тастау</button><SettingsEditor value={content.settings} onChange={v=>upd(c=>{c.settings=v})}/></Card>}
+      {tab === 'settings' && <Card title="Сайт баптаулары">
+        <ImageField label="БІРЛІК жобасының логотипі (жоғарғы мәзір)" src={show(content.site.logoPhoto)} onPick={pickSite('logoPhoto')} />
+        <button className={btn} onClick={()=>setSite('logoPhoto','')}>Жоба логотипін алып тастау</button>
+        <div className="border-t border-sky-line pt-4">
+          <ImageField label="Мектеп эмблемасы (Жоба туралы бөлімінде)" src={show(content.site.schoolEmblem === undefined ? '/birlik/uploads/keleshek11-school-emblem.png' : content.site.schoolEmblem)} onPick={pickSite('schoolEmblem')} />
+          <p className="mt-2 text-xs text-navy-700">Мектеп эмблемасы жоба логотипінен бөлек сақталады.</p>
+          <button className={btn} onClick={()=>setSite('schoolEmblem','')}>Мектеп эмблемасын жасыру</button>
+          <button className={btn} onClick={()=>upd(c=>{delete c.site.schoolEmblem})}>Бастапқы эмблеманы қайтару</button>
+        </div>
+        <SettingsEditor value={content.settings} onChange={v=>upd(c=>{c.settings=v})}/>
+      </Card>}
       {tab === 'home' && (
         <Card title="Басты бет">
           <ImageField label="Басты беттегі сынып фотосы" src={show(content.site.heroPhoto)} onPick={pickSite('heroPhoto')} />

@@ -22,7 +22,7 @@ export const achievementYear = (a: Achievement): AchievementYear => a.year === '
 export interface SiteContent {
   builder?: BuilderData
   settings?: SiteSettings
-  site: { logoPhoto?: string; heroPhoto?: string; authorPhoto?: string; authorBio?: string; socialUrl?: string; socialQr?: string; resources?: Partial<Record<HomeResourceGroup, Resource[]>> }
+  site: { logoPhoto?: string; schoolEmblem?: string; heroPhoto?: string; authorPhoto?: string; authorBio?: string; socialUrl?: string; socialQr?: string; resources?: Partial<Record<HomeResourceGroup, Resource[]>> }
   steps: Record<string, StepData>
   achievements: Achievement[]
 }

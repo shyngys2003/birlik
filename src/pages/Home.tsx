@@ -17,13 +17,18 @@ const OUTCOMES = [
 export default function Home() {
   const { content } = useContent()
   const settings=content.settings
-  const schoolLogo = content.site.logoPhoto || '/birlik/uploads/keleshek11-logo.png'
   const sections = [
 
       <Section key="about" id="about" eyebrow="Таныстыру" title="Жоба туралы">
-        {schoolLogo && (
-          <div className="mb-8 flex justify-center">
-            <img src={schoolLogo} alt="Келешек 11 мектеп логотипі" className="w-full max-w-[320px] rounded-3xl border border-sky-line bg-white p-3 shadow-card" />
+        {content.site.schoolEmblem !== '' && (
+          <div className="mb-8 flex flex-col items-center gap-3">
+            <img
+              src={content.site.schoolEmblem ?? '/birlik/uploads/keleshek11-school-emblem.png'}
+              alt="№11 мектептің эмблемасы"
+              className="h-auto w-full max-w-[290px] rounded-3xl bg-white object-contain p-2 shadow-card"
+              loading="lazy"
+            />
+            <p className="text-center text-sm font-semibold text-navy-800">№11 жалпы орта білім беретін мектеп</p>
           </div>
         )}
         <p className="max-w-3xl text-lg leading-relaxed text-navy-800">

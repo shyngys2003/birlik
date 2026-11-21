@@ -13,7 +13,6 @@ const NavIcon = ({ id }: { id: string }) => { const I = ICONS[id] ?? Home; retur
 export default function Layout({ children }: { children: ReactNode }) {
   const {content} = useContent()
   const settings = content.settings
-  const schoolLogo = content.site.logoPhoto || '/birlik/uploads/keleshek11-logo.png'
   useEffect(()=>{document.title=txt(settings,"projectTitle")},[settings])
   const custom = (content.builder?.pages ?? []).filter(p=>p.inMenu&&!p.hidden)
   const nav = menu(settings).filter(n=>!n.hidden)
@@ -27,7 +26,7 @@ export default function Layout({ children }: { children: ReactNode }) {
       <header className="sticky top-0 z-40 border-b border-white/10 bg-navy-950/90 text-white backdrop-blur">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
           <Link to="/" className="flex items-center gap-2 font-serif text-xl font-extrabold text-gold-light" aria-label="Басты бет">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gold text-navy-950">{schoolLogo ? <img src={schoolLogo} className="h-full w-full rounded-xl object-contain" alt=""/> : txt(settings,"logo")}</span>{txt(settings,"brand")}
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gold text-navy-950">{content.site.logoPhoto ? <img src={content.site.logoPhoto} className="h-full w-full rounded-xl object-contain" alt=""/> : txt(settings,"logo")}</span>{txt(settings,"brand")}
           </Link>
           <nav aria-label="Негізгі мәзір" className="hidden items-center gap-0.5 xl:flex">
             {nav.map(n => (
