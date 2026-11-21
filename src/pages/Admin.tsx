@@ -274,9 +274,7 @@ export default function Admin() {
               {directions(content.settings).map((d, i) => <option key={d.slug} value={d.slug}>{i + 1}. {d.title}</option>)}
             </select>
           </Field>
-          <Field label="Нәтиже мен дәлелдер (мәтін)"><textarea rows={4} className={inp} value={s.results ?? ''} onChange={e => upd(c => { sd(c).results = e.target.value })} /></Field>
           {mediaList('photos', 'Фотолар')}
-          {mediaList('evidence', 'Дәлел құжаттары (грамота, куәлік суреттері)')}
 
           <div className="space-y-3">
             <p className="text-sm font-semibold text-navy-900">Бейнелер (YouTube сілтемесі)</p>
@@ -294,25 +292,6 @@ export default function Admin() {
               onClick={() => { upd(c => { (sd(c).videos ??= []).push({ url: vUrl.trim(), caption: vCap.trim() || undefined }) }); setVUrl(''); setVCap('') }}>
               <Plus className="h-4 w-4" aria-hidden="true" />Бейне қосу
             </button>
-          </div>
-
-          <div className="space-y-3">
-            <p className="text-sm font-semibold text-navy-900">Әдістемелік ресурстар (PDF, Word, т.б.)</p>
-            <ul className="space-y-2">
-              {(s.resources ?? []).map((r, i) => (
-                <li key={r.file} className="flex items-center gap-2 rounded-xl border border-sky-line p-2 text-sm">
-                  <span className="min-w-0 flex-1 truncate">{r.title}</span>
-                  <button aria-label="Өшіру" className="rounded-full p-2 text-red-700 hover:bg-red-50" onClick={() => upd(c => { (sd(c).resources ??= []).splice(i, 1) })}><Trash2 className="h-4 w-4" /></button>
-                </li>
-              ))}
-            </ul>
-            <input className={inp} placeholder="Ресурс атауы" value={rTitle} onChange={e => setRTitle(e.target.value)} />
-            <Pick label="Файл таңдау және қосу" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.zip"
-              onFiles={async f => {
-                if (!rTitle.trim()) { err('Алдымен ресурс атауын жазыңыз.'); return }
-                const p = await addDoc(f[0])
-                if (p) { upd(c => { (sd(c).resources ??= []).push({ title: rTitle.trim(), file: p }) }); setRTitle('') }
-              }} />
           </div>
         </Card>
       )}

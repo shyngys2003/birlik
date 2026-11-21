@@ -1,17 +1,15 @@
 import { directions, sectionContent, txt } from '../site-settings'
 import type { CSSProperties } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { ArrowLeft, ArrowRight, Target, BookOpen, Lightbulb, Images, BarChart3, ClipboardList, Download, CheckCircle2 } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Target, BookOpen, Images, ClipboardList } from 'lucide-react'
 import { DIRECTIONS } from '../data'
 import { CONTENT } from '../content'
 import Ornament from '../components/Ornament'
-import { Results, Resources } from '../components/ContentBlocks'
 import { useContent } from '../content-store'
 import SectionNav from '../components/SectionNav'
 import Block from '../components/Block'
 import Gallery from '../components/Gallery'
 
-const RESOURCES = ['Әдістемелік нұсқаулық', 'Іс-шара сценарийі', 'Тапсырма парақтары мен сауалнамалар']
 
 export default function DirectionPage() {
   const { slug = '' } = useParams()
@@ -63,23 +61,8 @@ export default function DirectionPage() {
           </ul>
         </Block>
 
-        <Block n={3} title="Ұсынылатын оқыту әдістері" icon={Lightbulb}>
-          <ul className="grid gap-3 sm:grid-cols-3">
-            {c.methods.map(m => (
-              <li key={m} className="flex items-start gap-3 rounded-2xl border border-sky-line p-4">
-                <CheckCircle2 className="accent-text mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />
-                <span className="font-medium">{m}</span>
-              </li>
-            ))}
-          </ul>
-        </Block>
-
         <Block n={5} title="Фото және бейне галерея" icon={Images}>
           <Gallery photos={sd.photos} videos={sd.videos} />
-        </Block>
-
-        <Block n={6} title="Нәтиже және дәлелдер" icon={BarChart3}>
-          <Results d={sd} />
         </Block>
 
         <Block n={7} title="Сынып жетекшілеріне практикалық ұсыныстар" icon={ClipboardList}>
@@ -91,10 +74,6 @@ export default function DirectionPage() {
               </li>
             ))}
           </ol>
-        </Block>
-
-        <Block n={8} title="Әдістемелік ресурстар" icon={Download}>
-          <Resources d={sd} />
         </Block>
 
         <div className="flex justify-between gap-4 pt-4">

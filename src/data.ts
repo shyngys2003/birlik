@@ -31,7 +31,6 @@ export const NAV = [
   { id: 'about', label: 'Жоба туралы' },
   { id: 'author', label: 'Автор' },
   { id: 'model', label: 'БІРЛІК моделі' },
-  { id: 'practice', label: 'Тәжірибе' },
   { id: 'resources', label: 'Әдіскерлерге' },
   { id: 'achievements', label: 'Жетістіктер' },
   { id: 'social', label: 'Байланыс' },

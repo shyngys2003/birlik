@@ -18,9 +18,9 @@ export const TEXTS: Record<string,string> = {
   'outcome3Title':'Цифрлық нәтиже','outcome3Text':'Нақты сынып іс-шараларының, жетістіктердің, фото және бейнематериалдардың онлайн портфолиосы.',
   footer:'Барлық құқықтар қорғалған', socialTitle:'QR-код орны', socialText:'Әлеуметтік желідегі парақшаның QR-коды мен сілтемесі кейінірек қойылады.',
   ...Object.fromEntries(NAV.map(n=>[`eyebrow.${n.id}`,n.label])),
-  'section.about':'Жоба туралы','section.author':'Жоба авторы','section.model':'БІРЛІК — алты қадам','section.practice':'Сыныптағы нақты тәжірибе','section.resources':'Сынып жетекшілеріне арналған ресурстар','section.achievements':'Оқушылар жетістіктері','section.social':'Әлеуметтік желілер',
+  'section.about':'Жоба туралы','section.author':'Жоба авторы','section.model':'БІРЛІК — алты қадам','section.resources':'Сынып жетекшілеріне арналған ресурстар','section.achievements':'Оқушылар жетістіктері','section.social':'Әлеуметтік желілер',
   'eyebrow.about':'Таныстыру','eyebrow.model':'Модель',
-  'block.1':'Тәрбиелік мақсаты','block.2':'Қысқаша түсініктеме','block.3':'Ұсынылатын оқыту әдістері','block.5':'Фото және бейне галерея','block.6':'Нәтиже және дәлелдер','block.7':'Сынып жетекшілеріне практикалық ұсыныстар','block.8':'Әдістемелік ресурстар',
+  'block.1':'Тәрбиелік мақсаты','block.2':'Қысқаша түсініктеме','block.5':'Фото және бейне галерея','block.7':'Сынып жетекшілеріне практикалық ұсыныстар',
 }
 export const COLORS:Record<string,string>={ 'navy-950':'#071536','navy-900':'#0B1F4B','navy-800':'#12306B','navy-700':'#1B4290','sky-soft':'#EAF1FB','sky-line':'#D3E1F5',gold:'#C9A24B','gold-light':'#E8D39A' }
 export const txt=(s:SiteSettings|undefined,k:string,fallback=TEXTS[k]??'')=>s?.texts?.[k]??fallback

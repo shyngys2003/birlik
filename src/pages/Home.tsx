@@ -1,5 +1,5 @@
 import { txt, directions, menu } from '../site-settings'
-import { Camera, Video, MessageSquareQuote, FileText, Download, Trophy, QrCode, Share2, Users, Target, Laptop } from 'lucide-react'
+import { FileText, Download, QrCode, Share2, Users, Target, Laptop } from 'lucide-react'
 import Section from '../components/Section'
 import Hero from '../components/Hero'
 import { Achievements } from '../components/ContentBlocks'
@@ -20,6 +20,11 @@ export default function Home() {
   const sections = [
 
       <Section key="about" id="about" eyebrow="Таныстыру" title="Жоба туралы">
+        {content.site.logoPhoto && (
+          <div className="mb-8 flex justify-center">
+            <img src={content.site.logoPhoto} alt="Келешек 11 мектеп логотипі" className="w-full max-w-[320px] rounded-3xl border border-sky-line bg-white p-3 shadow-card" />
+          </div>
+        )}
         <p className="max-w-3xl text-lg leading-relaxed text-navy-800">
           {txt(settings,"aboutText")}
         </p>
@@ -49,14 +54,6 @@ export default function Home() {
       <Section key="model" id="model" eyebrow="Модель" title="БІРЛІК — алты қадам">
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {directions(settings).map((d, i) => <DirectionCard key={d.slug} d={d} index={i} />)}
-        </div>
-      </Section>,
-
-      <Section key="practice" id="practice" eyebrow="Тәжірибе" title="Сыныптағы нақты тәжірибе" tone="white">
-        <div className="grid gap-5 md:grid-cols-3">
-          <Placeholder label="Фотогалерея" icon={Camera} className="min-h-48" />
-          <Placeholder label="Бейнематериалдар" icon={Video} className="min-h-48" />
-          <Placeholder label="Оқушылар мен ата-аналардың пікірлері" icon={MessageSquareQuote} className="min-h-48" />
         </div>
       </Section>,
 
