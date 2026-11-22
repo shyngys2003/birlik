@@ -9,7 +9,15 @@ async function call(t: string, path: string, init: RequestInit = {}) {
     ...init, cache: 'no-store',
     headers: { Authorization: `Bearer ${t}`, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28', ...(init.body ? { 'Content-Type': 'application/json' } : {}) },
   })
-  if (r.status === 401 || r.status === 403) throw new AuthError()
+  if (r.status === 401) throw new AuthError()
+  if (r.status === 403 || r.status === 429) {
+    let detail = ''
+    try { const body = await r.clone().json(); detail = typeof body?.message === 'string' ? body.message : '' } catch { /* no JSON */ }
+    const remaining = r.headers.get('x-ratelimit-remaining')
+    const retryAfter = r.headers.get('retry-after')
+    const hint = retryAfter ? ` Retry after ${retryAfter}s.` : remaining === '0' ? ' GitHub API rate limit reached.' : ''
+    throw new Error(`GitHub ${r.status}: ${detail || 'Access denied or temporary API limit.'}${hint}`)
+  }
   return r
 }
 

@@ -72,7 +72,7 @@ export default function Admin() {
   const [eventCategory, setEventCategory] = useState<EventCategory>(EVENT_CATEGORIES[0].id)
 
   const err = (text: string) => setMsg({ ok: false, text })
-  const fail = (e: unknown) => err(e instanceof AuthError ? 'Код дұрыс емес, мерзімі өткен немесе сайтқа рұқсат жоқ.' : 'Қате шықты. Интернетті тексеріп, қайталаңыз.')
+  const fail = (e: unknown) => err(e instanceof AuthError ? 'Код дұрыс емес, мерзімі өткен немесе сайтқа рұқсат жоқ.' : e instanceof Error ? e.message : 'Қате шықты. Интернетті тексеріп, қайталаңыз.')
 
   async function login(t: string) {
     setBusy(true); setMsg(null)
