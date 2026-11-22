@@ -1,5 +1,15 @@
 {
-  "events": {},
+  "events": {
+    "class-events": [
+      {
+        "id": "1795376240972-0k68c",
+        "title": "Жаңа іс-шара",
+        "photos": [],
+        "videos": [],
+        "files": []
+      }
+    ]
+  },
   "settings": {
     "texts": {
       "brand": "БІРЛІК",
@@ -128,7 +138,12 @@
           "file": "uploads/files/1795374926591-8xfh9i-11--LIKE-.docx"
         }
       ],
-      "scenarios": [],
+      "scenarios": [
+        {
+          "title": "Тәрбие сағаты 2.docx",
+          "file": "uploads/files/1795376280838-metzj0-2.docx"
+        }
+      ],
       "worksheets": [
         {
           "title": "1001мақал 101жұмбақ.docx",
