@@ -1,4 +1,5 @@
 {
+  "events": {},
   "settings": {
     "texts": {
       "brand": "БІРЛІК",
@@ -123,8 +124,8 @@
     "resources": {
       "guide": [
         {
-          "title": "birlik-school-emblem-hero-patch.zip",
-          "file": "uploads/files/1795372138112-q5axcn-birlik-school-emblem-hero-patch.zip"
+          "title": "О_внесении_изменения_и_дополнения_в_приказ_Министр (1).pdf",
+          "file": "uploads/files/1795373572852-siac8u-_-_-_-_-_-_-_-1-.pdf"
         }
       ]
     }
@@ -319,9 +320,5 @@
       ]
     }
   },
-  "achievements": [
-    {
-      "title": ""
-    }
-  ]
+  "achievements": []
 }
