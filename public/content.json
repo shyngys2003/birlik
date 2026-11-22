@@ -83,7 +83,18 @@
     "heroPhoto": "uploads/1795150773331-3thyh.jpg",
     "logoPhoto": "uploads/1795171520603-dxi63.jpg"
   },
-  "steps": {},
+  "steps": {
+    "beyimdelu": {
+      "photos": [
+        {
+          "src": "uploads/1795347917194-ypcxu.jpg"
+        },
+        {
+          "src": "uploads/1795347921880-3l2ep.jpg"
+        }
+      ]
+    }
+  },
   "achievements": [
     {
       "title": ""
