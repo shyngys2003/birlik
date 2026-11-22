@@ -4,7 +4,7 @@ import { ConflictError, readHistory, readVersion, type HistoryItem } from '../gi
 import BuilderEditor from '../components/BuilderEditor'
 import { blankBuilder } from '../builder'
 import SettingsEditor from '../components/SettingsEditor'
-import { directions } from '../site-settings'
+import { directions, sectionContent } from '../site-settings'
 import { useEffect, useState, useRef, type ReactNode } from 'react'
 import { Upload, Trash2, LogOut, Send, Plus, Lock, AlertTriangle } from 'lucide-react'
 import { DIRECTIONS } from '../data'
@@ -172,6 +172,22 @@ export default function Admin() {
     }
   }
 
+  async function addCategoryVideos(files: File[], category: string) {
+    for (const file of files) {
+      const extension = file.name.split('.').pop()?.toLowerCase()
+      if (!extension || !['mp4', 'webm'].includes(extension) || file.size > 15 * 1024 * 1024) {
+        err('MP4 немесе WebM таңдаңыз. Әр бейне 15 МБ-тан аспауы керек.')
+        continue
+      }
+      try {
+        const path = `uploads/videos/${Date.now()}-${Math.random().toString(36).slice(2, 9)}.${extension}`
+        const b64 = await fileToB64(file)
+        setPending(prev => ({...prev, [path]: { b64, preview: '' }}))
+        upd(c => { ((sd(c).categoryMaterials ??= {})[category] ??= {}).videos ??= []; sd(c).categoryMaterials![category].videos!.push({url: path, caption: file.name}) })
+      } catch { err(`Бейнені оқу мүмкін болмады: ${file.name}`) }
+    }
+  }
+
   async function publish() {
     if (!token || Date.now() >= expiresAt) { lock('Сеанс аяқталды. Кодты қайта енгізіңіз.'); return }
     setBusy(true); setMsg(null)
@@ -332,6 +348,54 @@ export default function Admin() {
               {directions(content.settings).map((d, i) => <option key={d.slug} value={d.slug}>{i + 1}. {d.title}</option>)}
             </select>
           </Field>
+          <div className="space-y-4 rounded-2xl border border-sky-line bg-sky-soft/40 p-4">
+            <h3 className="font-serif text-xl font-bold">Мазмұн бағыттары — материалдар</h3>
+            <p className="text-sm text-navy-700">Әр карточкаға фото, видео және құжаттарды бөлек қосыңыз. Өзгерістерді шығару үшін «Жариялау» басыңыз.</p>
+            {(sectionContent(content.settings, step)?.categories ?? []).map(category => {
+              const m = s.categoryMaterials?.[category]
+              return <details key={`${step}-${category}`} className="rounded-2xl border border-sky-line bg-white p-4">
+                <summary className="cursor-pointer font-bold text-navy-900">{category} <span className="ml-2 text-xs font-normal text-navy-700">{(m?.photos?.length ?? 0) + (m?.videos?.length ?? 0) + (m?.files?.length ?? 0)} материал</span></summary>
+                <div className="mt-4 space-y-5">
+                  <div className="space-y-2">
+                    <p className="font-semibold">Фотолар</p>
+                    <Pick label="Фото қосу" accept="image/*" multiple onFiles={async files => {
+                      const paths = await addImages(files)
+                      if(paths.length) upd(c => { (((sd(c).categoryMaterials ??= {})[category] ??= {}).photos ??= []).push(...paths.map(src => ({src}))) })
+                    }}/>
+                    <div className="grid gap-2 sm:grid-cols-2">{(m?.photos ?? []).map((photo,i) => <div key={`${photo.src}-${i}`} className="rounded-xl border border-sky-line p-2">
+                      <img src={show(photo.src)} alt="" className="aspect-video w-full rounded-lg object-cover" />
+                      <input className={inp} value={photo.caption ?? ''} placeholder="Фото сипаттамасы" onChange={e=>upd(c=>{const x=c.steps[step]?.categoryMaterials?.[category]?.photos?.[i];if(x)x.caption=e.target.value})} />
+                      <button className={`${btn} text-red-700`} onClick={()=>upd(c=>{c.steps[step]?.categoryMaterials?.[category]?.photos?.splice(i,1)})}><Trash2 className="h-4 w-4"/>Өшіру</button>
+                    </div>)}</div>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="font-semibold">Бейнелер</p>
+                    <Pick label="Видео қосу (MP4, WebM)" accept=".mp4,.webm,video/mp4,video/webm" multiple onFiles={files => { void addCategoryVideos(files, category) }}/>
+                    <p className="text-xs text-navy-700">Әр бейне 15 МБ-тан аспауы керек.</p>
+                    {(m?.videos ?? []).map((video, i) => <div key={`${video.url}-${i}`} className="flex flex-wrap items-center gap-2 rounded-xl border p-2 text-sm">
+                      <span className="min-w-0 flex-1 break-all">{video.caption ?? video.url}{pending[video.url] ? ' · Нобай' : ''}</span>
+                      <button className={`${btn} text-red-700`} onClick={()=>upd(c=>{c.steps[step]?.categoryMaterials?.[category]?.videos?.splice(i,1)})}><Trash2 className="h-4 w-4"/>Өшіру</button>
+                    </div>)}
+                  </div>
+                  <div className="space-y-2">
+                    <p className="font-semibold">Құжаттар</p>
+                    <Pick label="Құжат қосу" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.zip" multiple onFiles={async files => {
+                      for(const file of files) {
+                        try { const path = await addDoc(file); if(path) upd(c=>{(((sd(c).categoryMaterials ??= {})[category] ??= {}).files ??= []).push({file:path,title:file.name})}) }
+                        catch { err(`Файлды оқу мүмкін болмады: ${file.name}`) }
+                      }
+                    }}/>
+                    <p className="text-xs text-navy-700">Құжаттың максималды өлшемі: 25 МБ.</p>
+                    {(m?.files ?? []).map((file,i) => <div key={`${file.file}-${i}`} className="flex flex-wrap items-center gap-2 rounded-xl border p-2">
+                      <input className={`${inp} min-w-0 flex-1`} value={file.title} onChange={e=>upd(c=>{const x=c.steps[step]?.categoryMaterials?.[category]?.files?.[i];if(x)x.title=e.target.value})} />
+                      {pending[file.file] ? <span className="text-xs">Нобай</span> : <a href={file.file} target="_blank" rel="noopener noreferrer" className="text-sm underline">Ашу</a>}
+                      <button className={`${btn} text-red-700`} onClick={()=>upd(c=>{c.steps[step]?.categoryMaterials?.[category]?.files?.splice(i,1)})}><Trash2 className="h-4 w-4"/>Өшіру</button>
+                    </div>)}
+                  </div>
+                </div>
+              </details>
+            })}
+          </div>
           {mediaList('photos', 'Фотолар')}
 
           <div className="space-y-3">

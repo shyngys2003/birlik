@@ -12,7 +12,13 @@ export const HOME_RESOURCE_GROUPS = [
   { id: 'worksheets', title: 'Сыныптан тыс іс-шаралардың жоспарлары' },
 ] as const
 export type HomeResourceGroup = typeof HOME_RESOURCE_GROUPS[number]['id']
+export interface CategoryMaterials {
+  photos?: Media[]
+  videos?: VideoItem[]
+  files?: Resource[]
+}
 export interface StepData {
+  categoryMaterials?: Record<string, CategoryMaterials>
   experience?: string; whenWhere?: string; results?: string
   photos?: Media[]; videos?: VideoItem[]; evidence?: Media[]; resources?: Resource[]
 }

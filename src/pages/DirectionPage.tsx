@@ -6,6 +6,7 @@ import { DIRECTIONS } from '../data'
 import { CONTENT } from '../content'
 import Ornament from '../components/Ornament'
 import { useContent } from '../content-store'
+import CategoryMaterialsView from '../components/CategoryMaterialsView'
 import SectionNav from '../components/SectionNav'
 import Block from '../components/Block'
 import Gallery from '../components/Gallery'
@@ -53,9 +54,8 @@ export default function DirectionPage() {
           <h3 className="mt-6 font-bold text-navy-900">Мазмұн бағыттары</h3>
           <ul className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {c.categories.map(t => (
-              <li key={t} className="accent-soft flex flex-col gap-2 rounded-2xl p-4">
-                <span className="font-semibold text-navy-900">{t}</span>
-                <span className="text-xs text-navy-700/70">Материал кейінірек жүктеледі</span>
+              <li key={t} className="accent-soft rounded-2xl p-4">
+                <CategoryMaterialsView title={t} materials={sd.categoryMaterials?.[t]} />
               </li>
             ))}
           </ul>
