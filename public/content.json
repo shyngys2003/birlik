@@ -99,6 +99,31 @@
           "src": "uploads/1795348251480-ugiui.jpg"
         }
       ]
+    },
+    "izgilik": {
+      "photos": [
+        {
+          "src": "uploads/1795351073406-y0k7l.jpg"
+        },
+        {
+          "src": "uploads/1795351192590-r0mo9.jpg"
+        },
+        {
+          "src": "uploads/1795351192618-jipfn.jpg"
+        },
+        {
+          "src": "uploads/1795351192647-1m5wx.jpg"
+        },
+        {
+          "src": "uploads/1795351207242-4wdrs.jpg"
+        }
+      ],
+      "videos": [
+        {
+          "url": "uploads/videos/1795351104178-a0d8jo1.mp4",
+          "caption": "WhatsApp Video 2026-11-22 at 16.21.14.mp4"
+        }
+      ]
     }
   },
   "achievements": [
