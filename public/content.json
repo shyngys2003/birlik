@@ -327,5 +327,11 @@
       ]
     }
   },
-  "achievements": []
+  "achievements": [
+    {
+      "title": "",
+      "year": "2026-2027",
+      "photo": "uploads/1795376182508-nnnlf.jpg"
+    }
+  ]
 }
