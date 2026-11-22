@@ -2,7 +2,7 @@ import { txt } from '../site-settings'
 import { useEffect, useState } from 'react'
 import { useContent } from '../content-store'
 import { Link } from 'react-router-dom'
-import { GraduationCap, Play, ArrowDown, Handshake, Star, BrainCircuit, TrendingUp, ThumbsUp, Heart, BookOpen, Send, ImagePlus } from 'lucide-react'
+import { Play, ArrowDown, Handshake, Star, BrainCircuit, TrendingUp, ThumbsUp, Heart, BookOpen, Send, ImagePlus } from 'lucide-react'
 
 const TILES = [
   { icon: Handshake, label: 'Ұйымшылдық пен достық' },
@@ -30,9 +30,18 @@ export default function Hero() {
 
       <div className="relative mx-auto grid max-w-6xl items-center gap-10 px-4 pb-16 pt-12 sm:px-6 lg:grid-cols-[1.15fr_1fr] lg:pt-16">
         <div>
-          <p className="rise inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-gold-light via-gold to-gold-light px-5 py-2 text-xs font-bold uppercase tracking-wide text-navy-950 shadow-lg sm:text-sm">
-            <GraduationCap className="h-5 w-5" aria-hidden="true" />{txt(settings,"badge")}
-          </p>
+          <div className="rise flex items-center gap-4">
+            <img
+              src={content.site.schoolEmblem || '/birlik/uploads/keleshek11-school-emblem.png'}
+              alt="№11 мектеп эмблемасы"
+              className="h-20 w-20 shrink-0 rounded-full border-2 border-gold-light bg-white object-cover p-0.5 shadow-lg sm:h-24 sm:w-24"
+            />
+            {txt(settings,"badge").trim() && (
+              <span className="rounded-full bg-gradient-to-r from-gold-light via-gold to-gold-light px-4 py-2 text-xs font-bold uppercase tracking-wide text-navy-950 shadow-lg sm:text-sm">
+                {txt(settings,"badge")}
+              </span>
+            )}
+          </div>
           <h1 className="rise mt-6 font-serif text-4xl font-extrabold leading-[1.12] sm:text-5xl xl:text-6xl">
             {settings?.texts?.projectTitle !== undefined ? txt(settings,"projectTitle") : <>«Дос бол <span className={goldText}>LIKE</span>» жобасы негізіндегі «<span className={goldText}>БІРЛІК</span>» моделі</>}
           </h1>

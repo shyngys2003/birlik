@@ -19,7 +19,6 @@ export default function Layout({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false)
   const navigate = useNavigate()
   const go = (id: string) => { setOpen(false); navigate('/', { state: { scrollTo: id } }) }
-  const schoolEmblem = '/birlik/uploads/keleshek11-school-emblem.png'
 
   return (
     <div className="site-shell flex min-h-screen flex-col bg-sky-soft text-navy-900" style={themeStyle(settings) as CSSProperties}>
@@ -36,10 +35,8 @@ export default function Layout({ children }: { children: ReactNode }) {
               ))}
               {custom.length>0 && <details className="relative"><summary className="cursor-pointer px-3 py-2 text-sm">Қосымша</summary><div className="absolute right-0 top-full min-w-48 rounded-xl bg-navy-950 p-2 shadow-card">{custom.map(p=><Link key={p.id} to={`/page/${p.id}`} onClick={e=>e.currentTarget.closest("details")?.removeAttribute("open")} className="block rounded-lg px-3 py-2 hover:bg-white/10">{p.title}</Link>)}</div></details>}
             </nav>
-            <img src={schoolEmblem} alt="№11 мектеп эмблемасы" className="h-11 w-11 rounded-full border-2 border-gold-light bg-white object-cover p-0.5 shadow" />
           </div>
           <div className="flex items-center gap-3 xl:hidden">
-            <img src={schoolEmblem} alt="№11 мектеп эмблемасы" className="h-10 w-10 rounded-full border-2 border-gold-light bg-white object-cover p-0.5 shadow" />
             <button className="rounded-xl p-2 text-white" onClick={() => setOpen(!open)} aria-expanded={open} aria-controls="mobile-nav" aria-label={open ? 'Мәзірді жабу' : 'Мәзірді ашу'}>
               {open ? <X /> : <Menu />}
             </button>
