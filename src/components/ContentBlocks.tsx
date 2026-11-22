@@ -2,7 +2,7 @@ import { CalendarDays, FileText, ListChecks, Trophy, MessageSquareQuote, FileDow
 import Placeholder from './Placeholder'
 import { ACHIEVEMENT_YEARS, achievementYear, type Achievement, type StepData } from '../content-store'
 
-const RESOURCES = ['Әдістемелік нұсқаулық', 'Іс-шара сценарийі', 'Тапсырма парақтары мен сауалнамалар']
+const RESOURCES = ['Әдістемелік көмек', 'Сынып сағаттарының жоспарлары', 'Сыныптан тыс іс-шаралардың жоспарлары']
 
 export function Experience({ d }: { d: StepData }) {
   if (!d.experience && !d.whenWhere) {

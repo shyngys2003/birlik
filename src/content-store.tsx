@@ -6,9 +6,9 @@ export interface Media { src: string; caption?: string }
 export interface VideoItem { url: string; caption?: string }
 export interface Resource { title: string; file: string }
 export const HOME_RESOURCE_GROUPS = [
-  { id: 'guide', title: 'Әдістемелік нұсқаулық' },
-  { id: 'scenarios', title: 'Сынып сағаттарының сценарийлері' },
-  { id: 'worksheets', title: 'Тапсырма парақтары мен сауалнамалар' },
+  { id: 'guide', title: 'Әдістемелік көмек' },
+  { id: 'scenarios', title: 'Сынып сағаттарының жоспарлары' },
+  { id: 'worksheets', title: 'Сыныптан тыс іс-шаралардың жоспарлары' },
 ] as const
 export type HomeResourceGroup = typeof HOME_RESOURCE_GROUPS[number]['id']
 export interface StepData {
