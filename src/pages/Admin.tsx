@@ -137,6 +137,23 @@ export default function Admin() {
     return p
   }
 
+  async function addVideoFiles(files: File[]) {
+    const MAX_VIDEO_SIZE = 20 * 1024 * 1024
+    const videos: { url: string; caption?: string }[] = []
+    for (const f of files) {
+      const ext = f.name.split('.').pop()?.toLowerCase()
+      if (ext !== 'mp4' && ext !== 'webm') { err('MP4 немесе WebM бейнесін таңдаңыз.'); continue }
+      if (f.size > MAX_VIDEO_SIZE) { err(`${f.name}: бейне 20 МБ-тан аспауы керек.`); continue }
+      try {
+        const url = `uploads/videos/${Date.now()}-${Math.random().toString(36).slice(2, 9)}.${ext}`
+        const b64 = await fileToB64(f)
+        setPending(prev => ({ ...prev, [url]: { b64, preview: '' } }))
+        videos.push({ url, caption: f.name })
+      } catch { err(`${f.name}: бейнені оқу мүмкін болмады.`) }
+    }
+    if (videos.length) upd(c => { (sd(c).videos ??= []).push(...videos) })
+  }
+
   async function publish() {
     if (!token || Date.now() >= expiresAt) { lock('Сеанс аяқталды. Кодты қайта енгізіңіз.'); return }
     setBusy(true); setMsg(null)
@@ -287,11 +304,13 @@ export default function Admin() {
           {mediaList('photos', 'Фотолар')}
 
           <div className="space-y-3">
-            <p className="text-sm font-semibold text-navy-900">Бейнелер (YouTube сілтемесі)</p>
+            <p className="text-sm font-semibold text-navy-900">Бейнелер (файл немесе YouTube)</p>
+            <Pick label="Компьютерден бейне жүктеу" accept=".mp4,.webm,video/mp4,video/webm" multiple onFiles={files => { void addVideoFiles(files) }} />
+            <p className="text-xs text-navy-700">MP4 немесе WebM, әр файл 20 МБ-қа дейін. «Жариялау» басылғанда сайтқа жіберіледі.</p>
             <ul className="space-y-2">
               {(s.videos ?? []).map((v, i) => (
                 <li key={v.url} className="flex items-center gap-2 rounded-xl border border-sky-line p-2 text-sm">
-                  <span className="min-w-0 flex-1 truncate">{v.caption ? `${v.caption} — ` : ''}{v.url}</span>
+                  <span className="min-w-0 flex-1 truncate">{v.caption ? `${v.caption} — ` : ''}{v.url}{pending[v.url] ? ' (жарияланбаған)' : ''}</span>
                   <button aria-label="Өшіру" className="rounded-full p-2 text-red-700 hover:bg-red-50" onClick={() => upd(c => { (sd(c).videos ??= []).splice(i, 1) })}><Trash2 className="h-4 w-4" /></button>
                 </li>
               ))}

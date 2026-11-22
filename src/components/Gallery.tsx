@@ -7,13 +7,13 @@ type Tab = 'photo' | 'video'
 const ytId = (u: string) => u.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/))([\w-]{11})/)?.[1]
 
 function VideoCard({ v }: { v: VideoItem }) {
-  if (!/^https?:\/\//.test(v.url)) return null
+  if (!/^https?:\/\//.test(v.url) && !/^uploads\/videos\/[A-Za-z0-9._/-]+$/.test(v.url)) return null
   const id = ytId(v.url)
   return (
     <figure className="overflow-hidden rounded-2xl border border-sky-line bg-white">
       {id ? (
         <iframe className="aspect-video w-full" src={`https://www.youtube-nocookie.com/embed/${id}`} title={v.caption || 'Бейне'} loading="lazy" allowFullScreen />
-      ) : /\.mp4$/i.test(v.url) ? (
+      ) : /\.(mp4|webm)(?:\?.*)?$/i.test(v.url) ? (
         <video className="aspect-video w-full" src={v.url} controls preload="metadata" />
       ) : (
         <a href={v.url} target="_blank" rel="noopener noreferrer" className="flex aspect-video items-center justify-center font-semibold text-navy-700 underline">Бейнені ашу</a>
