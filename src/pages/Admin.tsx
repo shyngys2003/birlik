@@ -1,3 +1,4 @@
+import { EVENT_CATEGORIES, type EventCategory } from '../event-categories'
 import { loadDraft, saveDraft, clearDraft, downloadBackup, type Draft } from '../admin-drafts'
 import { ConflictError, readHistory, readVersion, type HistoryItem } from '../github'
 import BuilderEditor from '../components/BuilderEditor'
@@ -12,7 +13,7 @@ import { AuthError, checkAccess, readContent, publishAll, imageToB64, fileToB64,
 import { HOME_RESOURCE_GROUPS, ACHIEVEMENT_YEARS, achievementYear, type AchievementYear, type SiteContent, type StepData } from '../content-store'
 
 type Pending = Record<string, { b64: string; preview: string }>
-type Tab = 'resources' | 'dashboard' | 'home' | 'steps' | 'ach' | 'settings' | 'builder'
+type Tab = 'events' | 'resources' | 'dashboard' | 'home' | 'steps' | 'ach' | 'settings' | 'builder'
 type MediaKind = 'photos' | 'evidence'
 
 const KEY = 'birlik_admin_token'
@@ -68,6 +69,7 @@ export default function Admin() {
   const [vUrl, setVUrl] = useState('')
   const [vCap, setVCap] = useState('')
   const [rTitle, setRTitle] = useState('')
+  const [eventCategory, setEventCategory] = useState<EventCategory>(EVENT_CATEGORIES[0].id)
 
   const err = (text: string) => setMsg({ ok: false, text })
   const fail = (e: unknown) => err(e instanceof AuthError ? 'Код дұрыс емес, мерзімі өткен немесе сайтқа рұқсат жоқ.' : 'Қате шықты. Интернетті тексеріп, қайталаңыз.')
@@ -137,21 +139,37 @@ export default function Admin() {
     return p
   }
 
-  async function addVideoFiles(files: File[]) {
-    const MAX_VIDEO_SIZE = 20 * 1024 * 1024
-    const videos: { url: string; caption?: string }[] = []
+  // Browser uploads are staged and sent only when "Жариялау" is pressed.
+  async function addEventVideos(files: File[], category: EventCategory, eventId: string) {
     for (const f of files) {
       const ext = f.name.split('.').pop()?.toLowerCase()
-      if (ext !== 'mp4' && ext !== 'webm') { err('MP4 немесе WebM бейнесін таңдаңыз.'); continue }
-      if (f.size > MAX_VIDEO_SIZE) { err(`${f.name}: бейне 20 МБ-тан аспауы керек.`); continue }
+      if (!ext || !['mp4', 'webm'].includes(ext) || f.size > 15 * 1024 * 1024) {
+        err('MP4/WebM таңдаңыз. Бір видео 15 МБ-тан аспауы керек.')
+        continue
+      }
       try {
-        const url = `uploads/videos/${Date.now()}-${Math.random().toString(36).slice(2, 9)}.${ext}`
+        const path = `uploads/videos/${Date.now()}-${Math.random().toString(36).slice(2,8)}.${ext}`
         const b64 = await fileToB64(f)
-        setPending(prev => ({ ...prev, [url]: { b64, preview: '' } }))
-        videos.push({ url, caption: f.name })
-      } catch { err(`${f.name}: бейнені оқу мүмкін болмады.`) }
+        setPending(prev => ({ ...prev, [path]: { b64, preview: '' } }))
+        upd(c => { const e = c.events?.[category]?.find(e=>e.id===eventId); if(e) e.videos.push({ url: path, caption: f.name }) })
+      } catch { err('Бейнені оқу мүмкін болмады.') }
     }
-    if (videos.length) upd(c => { (sd(c).videos ??= []).push(...videos) })
+  }
+
+  async function addStepVideos(files: File[]) {
+    for (const f of files) {
+      const ext = f.name.split('.').pop()?.toLowerCase()
+      if (!ext || !['mp4', 'webm'].includes(ext) || f.size > 15 * 1024 * 1024) {
+        err('MP4/WebM таңдаңыз. Бір видео 15 МБ-тан аспауы керек.')
+        continue
+      }
+      try {
+        const path = `uploads/videos/${Date.now()}-${Math.random().toString(36).slice(2,8)}.${ext}`
+        const b64 = await fileToB64(f)
+        setPending(prev => ({...prev, [path]: { b64, preview: '' } }))
+        upd(c => { (sd(c).videos ??= []).push({url: path, caption: f.name}) })
+      } catch {err('Бейнені оқу мүмкін болмады.')}
+    }
   }
 
   async function publish() {
@@ -176,7 +194,7 @@ export default function Admin() {
   }
 
   const setSite = (k: Exclude<keyof SiteContent['site'], 'resources'>, v: string) => upd(c => { c.site[k] = v })
-  const pickSite = (k: 'heroPhoto' | 'authorPhoto' | 'socialQr' | 'logoPhoto' | 'schoolEmblem') => async (f: File) => { const [p] = await addImages([f]); if (p) setSite(k, p) }
+  const pickSite = (k: 'heroPhoto' | 'authorPhoto' | 'socialQr' | 'logoPhoto') => async (f: File) => { const [p] = await addImages([f]); if (p) setSite(k, p) }
   const s = content.steps[step] ?? {}
 
   const mediaList = (kind: MediaKind, label: string) => (
@@ -223,7 +241,7 @@ export default function Admin() {
       <p className="flex gap-2 rounded-xl bg-amber-50 p-3 text-sm text-amber-900"><AlertTriangle className="h-5 w-5 shrink-0" aria-hidden="true" />Сайт барлығына ашық. Балалардың фотосы мен аты-жөнін тек ата-аналардың келісімімен жариялаңыз.</p>
 
       <div role="tablist" className="flex flex-wrap gap-2">
-        {([['dashboard','Басқару тақтасы'], ['builder','Бет конструкторы'], ['settings','Сайт баптаулары'], ['home', 'Басты бет'], ['resources', 'Ресурстар'], ['steps', 'Алты қадам'], ['ach', 'Жетістіктер']] as [Tab, string][]).map(([id, l]) => (
+        {([['dashboard','Басқару тақтасы'], ['builder','Бет конструкторы'], ['settings','Сайт баптаулары'], ['home', 'Басты бет'], ['resources', 'Ресурстар'], ['events','Іс-шаралар'], ['steps', 'Алты қадам'], ['ach', 'Жетістіктер']] as [Tab, string][]).map(([id, l]) => (
           <button key={id} role="tab" aria-selected={tab === id} onClick={() => setTab(id)} className={`${btn} ${tab === id ? 'bg-navy-900 text-white' : 'bg-white shadow-card'}`}>{l}</button>
         ))}
       </div>
@@ -255,17 +273,7 @@ export default function Admin() {
         </Card>
       </>}
       {tab === 'builder' && <Card title="Бет конструкторы"><BuilderEditor value={content.builder} settings={content.settings} busy={busy} onChange={fn=>upd(c=>fn(c.builder??=blankBuilder()))} show={show} upload={async(f,k)=>{setBusy(true);try{return k==='image'?(await addImages([f]))[0]||null:await addDoc(f)}catch{err('Файлды оқу мүмкін болмады.');return null}finally{setBusy(false)}}}/></Card>}
-      {tab === 'settings' && <Card title="Сайт баптаулары">
-        <ImageField label="БІРЛІК жобасының логотипі (жоғарғы мәзір)" src={show(content.site.logoPhoto)} onPick={pickSite('logoPhoto')} />
-        <button className={btn} onClick={()=>setSite('logoPhoto','')}>Жоба логотипін алып тастау</button>
-        <div className="border-t border-sky-line pt-4">
-          <ImageField label="Мектеп эмблемасы (Жоба туралы бөлімінде)" src={show(content.site.schoolEmblem === undefined ? '/birlik/uploads/keleshek11-school-emblem.png' : content.site.schoolEmblem)} onPick={pickSite('schoolEmblem')} />
-          <p className="mt-2 text-xs text-navy-700">Мектеп эмблемасы жоба логотипінен бөлек сақталады.</p>
-          <button className={btn} onClick={()=>setSite('schoolEmblem','')}>Мектеп эмблемасын жасыру</button>
-          <button className={btn} onClick={()=>upd(c=>{delete c.site.schoolEmblem})}>Бастапқы эмблеманы қайтару</button>
-        </div>
-        <SettingsEditor value={content.settings} onChange={v=>upd(c=>{c.settings=v})}/>
-      </Card>}
+      {tab === 'settings' && <Card title="Сайт баптаулары"><ImageField label="Сайт логотипі" src={show(content.site.logoPhoto)} onPick={pickSite('logoPhoto')} /><button className={btn} onClick={()=>setSite('logoPhoto','')}>Логотипті алып тастау</button><SettingsEditor value={content.settings} onChange={v=>upd(c=>{c.settings=v})}/></Card>}
       {tab === 'home' && (
         <Card title="Басты бет">
           <ImageField label="Басты беттегі сынып фотосы" src={show(content.site.heroPhoto)} onPick={pickSite('heroPhoto')} />
@@ -294,6 +302,29 @@ export default function Admin() {
         </fieldset>)}
       </Card>}
 
+      {tab === 'events' && <Card title="Іс-шараларды басқару">
+        <p className="text-sm text-navy-700">Әр санатқа іс-шара қосып, фото, бейне және құжаттарды жүктеңіз. Барлығын сақтау үшін «Жариялау» басыңыз.</p>
+        <Field label="Іс-шара түрі"><select className={inp} value={eventCategory} onChange={e=>setEventCategory(e.target.value as EventCategory)}>{EVENT_CATEGORIES.map(c=><option key={c.id} value={c.id}>{c.title}</option>)}</select></Field>
+        <button className={`${btn} bg-sky-soft`} onClick={()=>upd(c=>{(c.events??={})[eventCategory]??=[];c.events[eventCategory]!.push({id: `${Date.now()}-${Math.random().toString(36).slice(2,7)}`,title:'Жаңа іс-шара',photos:[],videos:[],files:[]})})}><Plus className="h-4 w-4"/>Іс-шара қосу</button>
+        {(content.events?.[eventCategory]??[]).map(ev=><fieldset key={ev.id} className="space-y-4 rounded-2xl border border-sky-line p-4">
+          <Field label="Іс-шара атауы"><input className={inp} value={ev.title} onChange={e=>upd(c=>{const item=c.events?.[eventCategory]?.find(x=>x.id===ev.id);if(item)item.title=e.target.value})}/></Field>
+          <Field label="Күні"><input type="date" className={inp} value={ev.date??''} onChange={e=>upd(c=>{const item=c.events?.[eventCategory]?.find(x=>x.id===ev.id);if(item)item.date=e.target.value})}/></Field>
+          <Field label="Сипаттамасы"><textarea className={inp} rows={3} value={ev.description??''} onChange={e=>upd(c=>{const item=c.events?.[eventCategory]?.find(x=>x.id===ev.id);if(item)item.description=e.target.value})}/></Field>
+          <div className="space-y-2"><p className="font-semibold">Фотолар</p>
+            <Pick label="Фото қосу" accept="image/*" multiple onFiles={async files=>{const paths=await addImages(files);upd(c=>{const item=c.events?.[eventCategory]?.find(x=>x.id===ev.id);if(item)item.photos.push(...paths.map(src=>({src})))})}}/>
+            <div className="grid gap-3 sm:grid-cols-2">{ev.photos.map((photo,i)=><div key={`${photo.src}-${i}`} className="rounded-xl border border-sky-line p-2"><img className="h-32 w-full rounded-lg object-cover" src={show(photo.src)} alt=""/><input className={inp} placeholder="Фото сипаттамасы" value={photo.caption??''} onChange={e=>upd(c=>{const p=c.events?.[eventCategory]?.find(x=>x.id===ev.id)?.photos[i];if(p)p.caption=e.target.value})}/><button className={`${btn} text-red-700`} onClick={()=>upd(c=>{c.events?.[eventCategory]?.find(x=>x.id===ev.id)?.photos.splice(i,1)})}>Өшіру</button></div>)}</div>
+          </div>
+          <div className="space-y-2"><p className="font-semibold">Бейнелер</p><Pick label="Видео жүктеу (MP4, WebM)" accept=".mp4,.webm,video/mp4,video/webm" multiple onFiles={files=>{void addEventVideos(files,eventCategory,ev.id)}}/><p className="text-xs text-navy-700">Әр файл 15 МБ-тан аспауы керек.</p>
+            {ev.videos.map((video,i)=><div key={`${video.url}-${i}`} className="flex flex-wrap items-center gap-2 rounded-xl border p-2"><span className="min-w-0 flex-1 truncate text-sm">{video.caption||video.url}</span><button className={`${btn} text-red-700`} onClick={()=>upd(c=>{c.events?.[eventCategory]?.find(x=>x.id===ev.id)?.videos.splice(i,1)})}>Өшіру</button></div>)}
+            <Field label="YouTube сілтемесі (қосымша)"><input className={inp} placeholder="https://youtu.be/..." onKeyDown={e=>{if(e.key==='Enter'){e.preventDefault();const value=e.currentTarget.value.trim();if(/^https:\/\//.test(value)){upd(c=>{c.events?.[eventCategory]?.find(x=>x.id===ev.id)?.videos.push({url:value})});e.currentTarget.value=''}}}}/></Field>
+          </div>
+          <div className="space-y-2"><p className="font-semibold">Құжаттар</p><Pick label="Файл қосу" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.zip" multiple onFiles={async files=>{for(const f of files){const path=await addDoc(f);if(path)upd(c=>{c.events?.[eventCategory]?.find(x=>x.id===ev.id)?.files.push({title:f.name,file:path})})}}}/>
+            {ev.files.map((file,i)=><div key={`${file.file}-${i}`} className="flex gap-2"><input className={inp} value={file.title} onChange={e=>upd(c=>{const item=c.events?.[eventCategory]?.find(x=>x.id===ev.id)?.files[i];if(item)item.title=e.target.value})}/><button className={`${btn} text-red-700`} onClick={()=>upd(c=>{c.events?.[eventCategory]?.find(x=>x.id===ev.id)?.files.splice(i,1)})}>Өшіру</button></div>)}
+          </div>
+          <button className={`${btn} bg-red-50 text-red-700`} onClick={()=>{if(window.confirm('Іс-шараны өшіру керек пе?'))upd(c=>{c.events?.[eventCategory]?.splice(c.events[eventCategory]!.findIndex(x=>x.id===ev.id),1)})}}><Trash2 className="h-4 w-4"/>Іс-шараны өшіру</button>
+        </fieldset>)}
+      </Card>}
+
       {tab === 'steps' && (
         <Card title="Алты қадам">
           <Field label="Қадамды таңдаңыз">
@@ -305,12 +336,12 @@ export default function Admin() {
 
           <div className="space-y-3">
             <p className="text-sm font-semibold text-navy-900">Бейнелер (файл немесе YouTube)</p>
-            <Pick label="Компьютерден бейне жүктеу" accept=".mp4,.webm,video/mp4,video/webm" multiple onFiles={files => { void addVideoFiles(files) }} />
-            <p className="text-xs text-navy-700">MP4 немесе WebM, әр файл 20 МБ-қа дейін. «Жариялау» басылғанда сайтқа жіберіледі.</p>
+            <Pick label="Компьютерден бейне жүктеу" accept=".mp4,.webm,video/mp4,video/webm" multiple onFiles={f=>{void addStepVideos(f)}}/>
+            <p className="text-xs text-navy-700">MP4 немесе WebM; әр файл 15 МБ-қа дейін.</p>
             <ul className="space-y-2">
               {(s.videos ?? []).map((v, i) => (
                 <li key={v.url} className="flex items-center gap-2 rounded-xl border border-sky-line p-2 text-sm">
-                  <span className="min-w-0 flex-1 truncate">{v.caption ? `${v.caption} — ` : ''}{v.url}{pending[v.url] ? ' (жарияланбаған)' : ''}</span>
+                  <span className="min-w-0 flex-1 truncate">{v.caption ? `${v.caption} — ` : ''}{v.url}</span>
                   <button aria-label="Өшіру" className="rounded-full p-2 text-red-700 hover:bg-red-50" onClick={() => upd(c => { (sd(c).videos ??= []).splice(i, 1) })}><Trash2 className="h-4 w-4" /></button>
                 </li>
               ))}

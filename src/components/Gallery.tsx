@@ -7,7 +7,7 @@ type Tab = 'photo' | 'video'
 const ytId = (u: string) => u.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/))([\w-]{11})/)?.[1]
 
 function VideoCard({ v }: { v: VideoItem }) {
-  if (!/^https?:\/\//.test(v.url) && !/^uploads\/videos\/[A-Za-z0-9._/-]+$/.test(v.url)) return null
+  if (!/^https?:\/\//.test(v.url)) return null
   const id = ytId(v.url)
   return (
     <figure className="overflow-hidden rounded-2xl border border-sky-line bg-white">

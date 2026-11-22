@@ -1,4 +1,5 @@
 import { useContent } from '../content-store'
+import { EVENT_CATEGORIES } from '../event-categories'
 import { txt, menu, themeStyle } from '../site-settings'
 import type { CSSProperties } from 'react'
 import { useEffect, useState, type ReactNode } from 'react'
@@ -16,6 +17,7 @@ export default function Layout({ children }: { children: ReactNode }) {
   useEffect(()=>{document.title=txt(settings,"projectTitle")},[settings])
   const custom = (content.builder?.pages ?? []).filter(p=>p.inMenu&&!p.hidden)
   const nav = menu(settings).filter(n=>!n.hidden)
+  const normalNav = nav.filter(n => n.id !== 'practice')
   const [open, setOpen] = useState(false)
   const navigate = useNavigate()
   const go = (id: string) => { setOpen(false); navigate('/', { state: { scrollTo: id } }) }
@@ -30,9 +32,15 @@ export default function Layout({ children }: { children: ReactNode }) {
           </Link>
           <div className="hidden items-center gap-4 xl:flex">
             <nav aria-label="Негізгі мәзір" className="flex items-center gap-0.5">
-              {nav.map(n => (
+              {normalNav.map(n => (
                 <button key={n.id} onClick={() => go(n.id)} className="inline-flex items-center gap-2 rounded-full px-2.5 py-2 text-[13px] font-medium text-white/85 transition hover:bg-white/10 hover:text-white"><NavIcon id={n.id} />{n.label}</button>
               ))}
+              <details className="group relative">
+                <summary className="flex cursor-pointer list-none items-center gap-2 rounded-full px-3 py-2 text-[13px] font-medium text-white/85 hover:bg-white/10">Іс-шаралар <span aria-hidden="true">⌄</span></summary>
+                <div className="absolute right-0 top-full z-50 min-w-64 rounded-xl border border-white/10 bg-navy-950 p-2 shadow-card">
+                  {EVENT_CATEGORIES.map(c=><Link key={c.id} to={`/events/${c.id}`} onClick={e=>e.currentTarget.closest('details')?.removeAttribute('open')} className="block rounded-lg px-3 py-2 text-sm text-white hover:bg-white/10">{c.title}</Link>)}
+                </div>
+              </details>
               {custom.length>0 && <details className="relative"><summary className="cursor-pointer px-3 py-2 text-sm">Қосымша</summary><div className="absolute right-0 top-full min-w-48 rounded-xl bg-navy-950 p-2 shadow-card">{custom.map(p=><Link key={p.id} to={`/page/${p.id}`} onClick={e=>e.currentTarget.closest("details")?.removeAttribute("open")} className="block rounded-lg px-3 py-2 hover:bg-white/10">{p.title}</Link>)}</div></details>}
             </nav>
           </div>
@@ -44,9 +52,10 @@ export default function Layout({ children }: { children: ReactNode }) {
         </div>
         {open && (
           <nav id="mobile-nav" aria-label="Мобильді мәзір" className="border-t border-white/10 bg-navy-950 px-4 py-3 xl:hidden">
-            {nav.map(n => (
+            {normalNav.map(n => (
               <button key={n.id} onClick={() => go(n.id)} className="block w-full rounded-xl px-3 py-3 text-left font-medium text-white hover:bg-white/10">{n.label}</button>
             ))}
+            <details className="rounded-xl text-white"><summary className="cursor-pointer px-3 py-3 font-medium">Іс-шаралар</summary><div className="pl-3">{EVENT_CATEGORIES.map(c=><Link key={c.id} to={`/events/${c.id}`} onClick={()=>setOpen(false)} className="block rounded-xl px-3 py-3 text-white hover:bg-white/10">{c.title}</Link>)}</div></details>
             {custom.map(p=><Link key={p.id} to={`/page/${p.id}`} onClick={()=>setOpen(false)} className="block rounded-xl px-3 py-3 text-white">{p.title}</Link>)}
           </nav>
         )}

@@ -3,6 +3,7 @@ import { Routes, Route, useLocation } from 'react-router-dom'
 import { useEffect } from 'react'
 import Layout from './components/Layout'
 import Home from './pages/Home'
+import EventsPage from './pages/EventsPage'
 import DirectionPage from './pages/DirectionPage'
 import Admin from './pages/Admin'
 import { ContentProvider } from './content-store'
@@ -26,6 +27,7 @@ export default function App() {
         <Route path="/" element={<ExtraBlocks target="home"><Home /></ExtraBlocks>} />
         <Route path="/qadam/:slug" element={<ExtraBlocks><DirectionPage /></ExtraBlocks>} />
         <Route path="/page/:id" element={<CustomPage />} />
+        <Route path="/events/:category" element={<EventsPage />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="*" element={<div className="py-32 text-center text-xl">Бет табылмады</div>} />
       </Routes>
